@@ -1566,8 +1566,10 @@ function Timepage() {
             var not_dark = gamePage.calendar.darkFutureYears(true) < 0
 
             if (gamePage.time.getCFU("blastFurnace").unlocked) {
-                if (gamePage.calendar.cycle == 5 && gamePage.time.getCFU("blastFurnace").isAutomationEnabled) {
-                    gamePage.time.getCFU("blastFurnace").isAutomationEnabled = false
+                if (gamePage.calendar.cycle == 5) {
+		    		if (gamePage.time.getCFU("blastFurnace").isAutomationEnabled) {
+                    	gamePage.time.getCFU("blastFurnace").isAutomationEnabled = false
+					}
                 }
                 else if (gamePage.resPool.energyProd - gamePage.resPool.energyCons >= 0 && ((gamePage.calendar.cycle != 5 || fast_combust) && gamePage.calendar.day > 0) && !gamePage.time.getCFU("blastFurnace").isAutomationEnabled) {
                     gamePage.time.getCFU("blastFurnace").isAutomationEnabled = true
