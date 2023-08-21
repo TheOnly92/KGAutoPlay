@@ -1483,7 +1483,7 @@ function Timepage() {
         if (gamePage.science.get('voidSpace').researched || gamePage.workshop.get("chronoforge").researched ){
             gamePage.timeTab.update();
         }
-        if (gamePage.science.get('voidSpace').researched){
+        if (gamePage.science.get('voidSpace').researched && GlobalMsg['science'] != 'Paradox Theory'){
             var VoidBuild = gamePage.timeTab.vsPanel.children[0].children;
             var voidcf = gamePage.religion.getZU("marker").val > 1 ? Math.max(Math.min(VoidBuild[3].model.prices.filter(res => res.name == "void")[0].val,VoidBuild[5].model.prices.filter(res => res.name == "void")[0].val),gamePage.resPool.get("void").value) : Math.min(VoidBuild[3].model.prices.filter(res => res.name == "void")[0].val,VoidBuild[5].model.prices.filter(res => res.name == "void")[0].val)
             if (gamePage.workshop.get("turnSmoothly").researched && !gamePage.ironWill) {
