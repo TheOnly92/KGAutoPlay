@@ -1594,18 +1594,21 @@ function Timepage() {
                             if (gamePage.getEffect("heatMax") - gamePage.time.heat > chronoforge[0].controller.getPricesMultiple(chronoforge[0].model, 5).timeCrystal * factor){
                                 chronoforge[0].controller.doShatterAmt(chronoforge[0].model, gamePage.calendar.yearsPerCycle)
                                 chronoforge[0].update();
+                                gamePage.msg('Skip time (1): ' + gamePage.calendar.yearsPerCycle );
                             }
                         }
                         else if (factor * chronoforge[0].controller.getPricesMultiple(chronoforge[0].model, 45).timeCrystal <= gamePage.getEffect("heatMax")  && (gamePage.calendar.cycle != 4 || gamePage.time.heat < gamePage.getEffect("heatMax") * 0.9) && gamePage.time.meta[0].meta[5].val >= 3 && tc_val >= gamePage.timeTab.cfPanel.children[0].children[0].controller.getPricesMultiple(gamePage.timeTab.cfPanel.children[0].children[0].model, 45).timeCrystal && gamePage.calendar.cycleYear == 0) {
                             if ( gamePage.getEffect("heatMax")  - gamePage.time.heat > chronoforge[0].controller.getPricesMultiple(chronoforge[0].model, 45).timeCrystal * factor &&  (gamePage.time.meta[0].meta[5].val >= 3 || (!gamePage.ironWill && gamePage.time.meta[0].meta[5].val >= 1))) {
                                 chronoforge[0].controller.doShatterAmt(chronoforge[0].model, gamePage.calendar.yearsPerCycle * (gamePage.calendar.cyclesPerEra - 1))
                                 chronoforge[0].update();
+                                gamePage.msg('Skip time (2): ' + gamePage.calendar.yearsPerCycle * (gamePage.calendar.cyclesPerEra - 1) );
                             }
                         }
                         else if (factor * chronoforge[0].controller.getPricesMultiple(chronoforge[0].model, 5).timeCrystal <= gamePage.getEffect("heatMax")  && (gamePage.calendar.cycle != 4 || gamePage.time.heat < gamePage.getEffect("heatMax") * 0.9) && gamePage.time.meta[0].meta[5].val >= 1 &&  tc_val >= gamePage.timeTab.cfPanel.children[0].children[0].controller.getPricesMultiple(gamePage.timeTab.cfPanel.children[0].children[0].model, 5).timeCrystal) {
                             if (gamePage.getEffect("heatMax") - gamePage.time.heat > chronoforge[0].controller.getPricesMultiple(chronoforge[0].model, 5).timeCrystal * factor){
                                 chronoforge[0].controller.doShatterAmt(chronoforge[0].model, gamePage.calendar.yearsPerCycle)
                                 chronoforge[0].update();
+                                gamePage.msg('Skip time (3): ' + gamePage.calendar.yearsPerCycle );
                             }
                         }
                         else if (tc_val >= gamePage.timeTab.cfPanel.children[0].children[0].controller.getPricesMultiple(gamePage.timeTab.cfPanel.children[0].children[0].model, 1).timeCrystal && gamePage.getEffect("heatMax") - gamePage.time.heat > chronoforge[0].controller.getPricesMultiple(chronoforge[0].model, 1).timeCrystal * factor) {
