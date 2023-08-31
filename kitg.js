@@ -506,7 +506,7 @@ function autoTrade() {
                         if (gamePage.time.meta[0].meta[5].unlocked && gamePage.resPool.get("timeCrystal").value > gamePage.timeTab.cfPanel.children[0].children[6].model.prices.filter(res => res.name == "timeCrystal")[0].val * (gamePage.timeTab.cfPanel.children[0].children[6].model.metadata.val > 2 ? 0.9 : 0.05)){
                             // Consider if we should get to the next resource retrieval level
                             gamePage.diplomacy.tradeAll(game.diplomacy.get("leviathans"));
-                        } else if (gamePage.space.getBuilding('sunlifter').unlocked && gamePage.resPool.get("timeCrystal").value >= 100 && gamePage.space.getBuilding('sunlifter').prices.filter(res => res.name == "science")[0].val < gamePage.resPool.get("science").maxValue) {
+                        } else if (gamePage.space.getBuilding('sunlifter').unlocked && gamePage.resPool.get("timeCrystal").value >= Chronosphere10SummPrices()['timeCrystal'] && gamePage.space.getBuilding('sunlifter').prices.filter(res => res.name == "science")[0].val < gamePage.resPool.get("science").maxValue) {
                             // maximize sunlifter level
                         }else if((gamePage.bld.getBuildingExt('chronosphere').meta.val >= 10 && gamePage.resPool.get("timeCrystal").value <= gamePage.resPool.get("eludium").value / 5 )  || switches['CollectResBReset'] ) {
                             gamePage.diplomacy.tradeMultiple(game.diplomacy.get("leviathans"),Math.min( gamePage.diplomacy.getMaxTradeAmt(game.diplomacy.get("leviathans")), Math.max(Math.floor(gamePage.resPool.get('unobtainium').value/5000),1)));
