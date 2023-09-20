@@ -516,7 +516,7 @@ function autoTrade() {
                     }
 
                     //Feed elders
-                    if (gamePage.resPool.get("necrocorn").value > (gamePage.religion.meta[0].meta[8].val > 0 ? ((gamePage.diplomacy.get("leviathans").energy + 1) * 10) : 1) &&  gamePage.diplomacy.get("leviathans").energy < (gamePage.religion.getZU("marker").val * 5 + 5)){
+                    if (gamePage.resPool.get("necrocorn").value > (gamePage.religion.meta[0].meta[8].val > 0 ? ((gamePage.diplomacy.get("leviathans").energy + 1) * 10) : Math.ceil(gamePage.diplomacy.get("leviathans").energy/10)+1) &&  gamePage.diplomacy.get("leviathans").energy < (gamePage.religion.getZU("marker").val * 5 + 5)){
                         gamePage.diplomacy.feedElders();
                     }
                 }
