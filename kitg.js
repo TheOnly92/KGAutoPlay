@@ -1644,6 +1644,8 @@ function Timepage() {
                             {}
                             else if ( t == 7)
                             {}
+                            else if (t == 2 && ((Math.floor(chronoforge[t].model.metadata.val / 8) - 1) * 5) > chronoforge[6].model.metadata.val)
+                            {}
                             else if (chronoforge[t].model.metadata.unlocked && chronoforge[t].model.enabled) {
                                 chronoforge[t].controller.buyItem(chronoforge[t].model, {}, function(result) {
                                     if (result) {
