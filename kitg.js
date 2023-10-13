@@ -511,7 +511,7 @@ function autoTrade() {
                             // maximize sunlifter level (best effort)
                         } else if (switches['CollectResBReset'] && gamePage.resPool.get("timeCrystal").value < 1500) {
                             gamePage.diplomacy.tradeMultiple(game.diplomacy.get("leviathans"),Math.min( gamePage.diplomacy.getMaxTradeAmt(game.diplomacy.get("leviathans")), Math.max(Math.floor(gamePage.resPool.get('unobtainium').value/5000),1)));
-                        }else if((gamePage.bld.getBuildingExt('chronosphere').meta.val >= 10 && gamePage.resPool.get("timeCrystal").value <= gamePage.resPool.get("eludium").value / 5 )  ) {
+                        }else if(!switches['CollectResBReset'] && (gamePage.bld.getBuildingExt('chronosphere').meta.val >= 10 && gamePage.resPool.get("timeCrystal").value <= gamePage.resPool.get("eludium").value / 5 )  ) {
                             gamePage.diplomacy.tradeMultiple(game.diplomacy.get("leviathans"),Math.min( gamePage.diplomacy.getMaxTradeAmt(game.diplomacy.get("leviathans")), Math.max(Math.floor(gamePage.resPool.get('unobtainium').value/5000),1)));
                         }
                     }
