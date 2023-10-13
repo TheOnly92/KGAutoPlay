@@ -1574,6 +1574,10 @@ function Timepage() {
             var not_dark = gamePage.calendar.darkFutureYears(true) < 0
 
             if (gamePage.time.getCFU("blastFurnace").unlocked) {
+		    		if (gamePage.time.getCFU("blastFurnace").isAutomationEnabled) {
+                    	gamePage.time.getCFU("blastFurnace").isAutomationEnabled = false
+					}
+              /*
                 if (gamePage.calendar.cycle == 5) {
 		    		if (gamePage.time.getCFU("blastFurnace").isAutomationEnabled) {
                     	gamePage.time.getCFU("blastFurnace").isAutomationEnabled = false
@@ -1582,6 +1586,7 @@ function Timepage() {
                 else if (gamePage.resPool.energyProd - gamePage.resPool.energyCons >= 0 && ((gamePage.calendar.cycle != 5 || fast_combust) && gamePage.calendar.day > 0) && !gamePage.time.getCFU("blastFurnace").isAutomationEnabled) {
                     gamePage.time.getCFU("blastFurnace").isAutomationEnabled = true
                 }
+                */
             }
 
             if (gamePage.workshop.get("relicStation").unlocked && !gamePage.workshop.get("relicStation").researched && gamePage.science.get("paradoxalKnowledge").researched){
