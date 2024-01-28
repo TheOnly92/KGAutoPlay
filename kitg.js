@@ -1286,14 +1286,16 @@ function energyControl() {
       [gamePage.science.get('voidSpace').researched ? gamePage.time.voidspaceUpgrades[4] : null, 0.1, gamePage.tabs[7] && gamePage.tabs[7].children[3] ? gamePage.tabs[7].children[3].children[0].children[5] : null],
     ];
 
+    var adjustedChamber = 0;
     if (gamePage.science.get('antimatter') && gamePage.resPool.get("antimatter").value < gamePage.resPool.get("antimatter").maxValue*0.9 && gamePage.space.meta[5].meta[1].on > 1){
       // Antimatter less than max storage then reduce containment chamber
       gamePage.space.meta[5].meta[1].on = gamePage.space.meta[5].meta[1].on-1;
+      adjustedChamber = 1;
     }
 
     if (proVar>conVar) {
       // Energy is positive then turn on some stuff
-      EnergyInc = EnergyPriority.filter(res => res[0] && res[0].val > res[0].on && (proVar > (conVar + res[0].effects.energyConsumption * gamePage.resPool.getEnergyConsumptionRatio() ) || (res[2].model.metadata.name == "containmentChamber" && gamePage.resPool.get("antimatter").value >= gamePage.resPool.get("antimatter").maxValue * 0.9 )  ) ).sort(function(a, b) {
+      EnergyInc = EnergyPriority.filter(res => res[0] && res[0].val > res[0].on && (((proVar > (conVar + res[0].effects.energyConsumption * gamePage.resPool.getEnergyConsumptionRatio() )) && res[2].model.metadata.name != "containmentChamber") || (res[2].model.metadata.name == "containmentChamber" && gamePage.resPool.get("antimatter").value >= gamePage.resPool.get("antimatter").maxValue * 0.9 && !adjustedChamber )  ) ).sort(function(a, b) {
         return a[1] - b[1];
       });
       if (EnergyInc.length > 0){
