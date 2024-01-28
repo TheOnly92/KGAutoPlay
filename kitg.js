@@ -1288,6 +1288,7 @@ function energyControl() {
     if (gamePage.science.get('antimatter') && gamePage.resPool.get("antimatter").value < gamePage.resPool.get("antimatter").maxValue*0.9 && gamePage.space.meta[5].meta[1].on > 1){
       // Antimatter less than max storage then reduce containment chamber
       gamePage.space.meta[5].meta[1].on = gamePage.space.meta[5].meta[1].on-1;
+      gamePage.msg('Setting chamber on: ' + gamePage.space.meta[5].meta[1].on);
     } else {
       EnergyPriority.push([gamePage.tabs[6].planetPanels[4] ? spcContChamber : null, (gamePage.science.get('antimatter').researched && gamePage.resPool.get("antimatter").value >= gamePage.resPool.get("antimatter").maxValue*0.9 && gamePage.space.meta[5].meta[1].val > 1) ? Math.max(0.05, (1 - gamePage.resPool.get("antimatter").value/gamePage.resPool.get("antimatter").maxValue )/10): 9999,gamePage.tabs[6].planetPanels[4] ? gamePage.tabs[6].planetPanels[4].children[1] : null]);
     }
