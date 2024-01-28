@@ -1282,8 +1282,8 @@ function energyControl() {
       [bldFactory, 0.01, gamePage.tabs[0].children.find(o => o.model.metadata && o.model.metadata.name == "factory")],
       [gamePage.tabs[6].planetPanels[1] ? (gamePage.resPool.get('uranium').value > 1000 ? spcLunarOutpost: null) : null, 0.01, gamePage.tabs[6].planetPanels[1]  ? (gamePage.resPool.get('uranium').value > 1000 ? gamePage.tabs[6].planetPanels[1].children[0] : null): null],
       [gamePage.tabs[6].planetPanels[3] ? spcOrbitalArray : null, 0.01, gamePage.tabs[6].planetPanels[3]  ? gamePage.tabs[6].planetPanels[3].children[1]: null],
-      [gamePage.bld.getBuildingExt('warehouse').meta.stage == 0 ? null : bldWarehouse, 0.3, gamePage.tabs[0].children.find(o => o.model.metadata && o.model.metadata.name == 'warehouse')]
-      [gamePage.science.get('voidSpace').researched ? gamePage.time.voidspaceUpgrades[4] : null, 0.02, gamePage.tabs[7] && gamePage.tabs[7].children[3] ? gamePage.tabs[7].children[3].children[0].children[5] : null],
+      [gamePage.bld.getBuildingExt('warehouse').meta.stage == 0 ? null : bldWarehouse, 0.3, gamePage.tabs[0].children.find(o => o.model.metadata && o.model.metadata.name == 'warehouse')],
+      [gamePage.science.get('voidSpace').researched ? gamePage.time.voidspaceUpgrades[4] : null, 0.001, gamePage.tabs[7] && gamePage.tabs[7].children[3] ? gamePage.tabs[7].children[3].children[0].children[5] : null],
     ];
 
     if (gamePage.science.get('antimatter') && gamePage.resPool.get("antimatter").value < gamePage.resPool.get("antimatter").maxValue*0.9 && gamePage.space.meta[5].meta[1].on > 1){
