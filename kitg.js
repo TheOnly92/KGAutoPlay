@@ -1297,8 +1297,9 @@ function energyControl() {
         return a[1] - b[1];
       });
       if (EnergyInc.length > 0){
-        gamePage.msg('Turning on: ' + EnergyInc[0][2].model.name);
-        EnergyInc[0][2].controller.on(EnergyInc[0][2].model,Math.min(Math.floor(FreeEnergy / (EnergyInc[0][0].effects.energyConsumption * gamePage.resPool.getEnergyConsumptionRatio()) ), EnergyInc[0][0].val -  EnergyInc[0][0].on));
+        var onNum = Math.min(Math.floor(FreeEnergy / (EnergyInc[0][0].effects.energyConsumption * gamePage.resPool.getEnergyConsumptionRatio()) ), EnergyInc[0][0].val -  EnergyInc[0][0].on);
+        gamePage.msg('Turning on (' + onNum + '): ' + EnergyInc[0][2].model.name);
+        EnergyInc[0][2].controller.on(EnergyInc[0][2].model, onNum);
       }
     } else if (proVar<conVar) {
       // Energy is negative then turn off some stuff
@@ -1306,8 +1307,9 @@ function energyControl() {
         return b[1] - a[1];
       });
       if (EnergyDec.length > 0){
-        gamePage.msg('Turning off: ' + EnergyDec[0][2].model.name);
-        EnergyDec[0][2].controller.off(EnergyDec[0][2].model, Math.min(EnergyDec[0][0].on - 1, Math.min(Math.ceil(FreeEnergy / (EnergyDec[0][0].effects.energyConsumption * gamePage.resPool.getEnergyConsumptionRatio()) ), EnergyDec[0][0].on)));
+        var onNum = Math.min(EnergyDec[0][0].on - 1, Math.min(Math.ceil(FreeEnergy / (EnergyDec[0][0].effects.energyConsumption * gamePage.resPool.getEnergyConsumptionRatio()) ), EnergyDec[0][0].on));
+        gamePage.msg('Turning off (' + onNum + '): ' + EnergyDec[0][2].model.name);
+        EnergyDec[0][2].controller.off(EnergyDec[0][2].model, onNum);
       }
     }
   }
