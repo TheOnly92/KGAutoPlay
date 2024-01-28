@@ -1263,10 +1263,6 @@ function autoAssign() {
 // Control Energy Consumption
 function energyControl() {
   if (switches["Energy Control"]){
-    proVar = gamePage.resPool.energyProd;
-    conVar = gamePage.resPool.energyCons;
-    FreeEnergy = Math.abs(proVar - conVar);
-
     // 0 = building data
     // 1 = priority
     // 2 = building control
@@ -1289,13 +1285,17 @@ function energyControl() {
       // Antimatter less than max storage then reduce containment chamber
       var sunlifter = gamePage.tabs[6].planetPanels[4].children[0];
       var empty = gamePage.resPool.get("antimatter").maxValue - gamePage.resPool.get("antimatter").value;
-      if (sunlifter.model.on*50 < empty) {
+      if (sunlifter.model.on*50*1.05 < empty) {
         gamePage.space.meta[5].meta[1].on = gamePage.space.meta[5].meta[1].on-1;
         gamePage.msg('Setting chamber on: ' + gamePage.space.meta[5].meta[1].on);
       }
     } else {
       EnergyPriority.push([gamePage.tabs[6].planetPanels[4] ? spcContChamber : null, (gamePage.science.get('antimatter').researched && gamePage.resPool.get("antimatter").value >= gamePage.resPool.get("antimatter").maxValue*0.9 && gamePage.space.meta[5].meta[1].val > 1) ? Math.max(0.05, (1 - gamePage.resPool.get("antimatter").value/gamePage.resPool.get("antimatter").maxValue )/10): 9999,gamePage.tabs[6].planetPanels[4] ? gamePage.tabs[6].planetPanels[4].children[1] : null]);
     }
+
+    proVar = gamePage.resPool.energyProd;
+    conVar = gamePage.resPool.energyCons;
+    FreeEnergy = Math.abs(proVar - conVar);
 
     if (proVar>conVar) {
       // Energy is positive then turn on some stuff
