@@ -1289,7 +1289,6 @@ function energyControl() {
       if (sunlifter.model.on*50*1.05 < empty) {
         // gamePage.space.meta[5].meta[1].on = gamePage.space.meta[5].meta[1].on-1;
         gamePage.tabs[6].planetPanels[4].children[1].controller.off(gamePage.tabs[6].planetPanels[4].children[1].model, 1);
-        gamePage.msg('Setting chamber on: ' + gamePage.space.meta[5].meta[1].on);
       }
     } else {
       EnergyPriority.push([gamePage.tabs[6].planetPanels[4] ? spcContChamber : null, (gamePage.science.get('antimatter').researched && gamePage.resPool.get("antimatter").value >= gamePage.resPool.get("antimatter").maxValue*0.9 && gamePage.space.meta[5].meta[1].val > 1) ? Math.max(0.05, (1 - gamePage.resPool.get("antimatter").value/gamePage.resPool.get("antimatter").maxValue )/10): 9999,gamePage.tabs[6].planetPanels[4] ? gamePage.tabs[6].planetPanels[4].children[1] : null]);
@@ -1306,7 +1305,6 @@ function energyControl() {
       });
       if (EnergyInc.length > 0){
         var onNum = Math.min(Math.floor(FreeEnergy / (EnergyInc[0][0].effects.energyConsumption * gamePage.resPool.getEnergyConsumptionRatio()) ), EnergyInc[0][0].val -  EnergyInc[0][0].on);
-        gamePage.msg('Turning on (' + onNum + '): ' + EnergyInc[0][2].model.name);
         EnergyInc[0][2].controller.on(EnergyInc[0][2].model, onNum);
       }
     } else if (proVar<conVar) {
@@ -1316,7 +1314,6 @@ function energyControl() {
       });
       if (EnergyDec.length > 0){
         var onNum = Math.min(EnergyDec[0][0].on - 1, Math.min(Math.ceil(FreeEnergy / (EnergyDec[0][0].effects.energyConsumption * gamePage.resPool.getEnergyConsumptionRatio()) ), EnergyDec[0][0].on));
-        gamePage.msg('Turning off (' + onNum + '): ' + EnergyDec[0][2].model.name);
         EnergyDec[0][2].controller.off(EnergyDec[0][2].model, onNum);
       }
     }
