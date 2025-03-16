@@ -32,7 +32,7 @@ var postApocalypse_is_competed = true;
 var GlobalMsg = {'craft':'','tech':'','relicStation':'','solarRevolution':'','ressourceRetrieval':'','chronosphere':'', 'science':''};
 var science_labels = ['astronomy', 'theology', 'voidSpace', 'paradoxalKnowledge', 'navigation', 'architecture', 'physics', 'chemistry', 'archeology', 'electricity', 'biology'];
 var sciencePriority = [null,[]]
-var goldebBuildings = ["temple","tradepost"];
+var golden_Buildings = ["temple","tradepost"];
 var switches = {"Energy Control":true, "Iron Will":false, "CollectResBReset":false}
 var ActualTabs = Object.values(gamePage.tabs.filter(tab => tab.tabName != "Stats"));
 var f = (a = 1, {x: c} ={ x: a / 10000}) => c;
@@ -54,9 +54,10 @@ function calc_sell_rate(res) {
                 }
 
 var upgrades_craft = [
-[gamePage.workshop.get("miningDrill"),[["steel",750*1.2]]],
+[gamePage.workshop.get("printingPress"),[["gear", 45*1.2]]],
 [gamePage.workshop.get("fluidizedReactors"),[["alloy",200*1.2]]],
 [gamePage.workshop.get("oxidation"),[["steel",5000*1.2]]],
+[gamePage.workshop.get("miningDrill"),[["steel",750*1.2]]],
 [gamePage.workshop.get("steelPlants"),[["gear",750*1.2]]],
 [gamePage.workshop.get("rotaryKiln"),[["gear",500*1.2]]]
 ];
@@ -66,7 +67,8 @@ var policy_lst_all = [
 "socialism", "diplomacy", "zebraRelationsAppeasement",
 "knowledgeSharing", "stoicism", "mysticism",
 "clearCutting", "fullIndustrialization", "militarizeSpace",
-"necrocracy", "expansionism", "frugality", "siphoning"
+"necrocracy", "expansionism", "frugality", "siphoning", "spiderRelationsGeologists", "lizardRelationsDiplomats",
+"sharkRelationsMerchants", "griffinRelationsMachinists", "dragonRelationsPhysicists", "nagaRelationsCultists"
 ];
 var policy_lst_post_apocalypse = [
 "liberty", "authocracy", "communism",
@@ -148,7 +150,7 @@ function autoPraise(){
 	    if (gamePage.religion.meta[1].meta[5].val == 1) {
 
 
-            if (gamePage.religion.getSolarRevolutionRatio() <= Math.max(gamePage.religion.transcendenceTier * 0.05, gamePage.getEffect("solarRevolutionLimit"))){
+            if (gamePage.religion.transcendenceTier > 1 && gamePage.religion.getSolarRevolutionRatio() <= Math.max((gamePage.religion.transcendenceTier + 1) * 0.05, gamePage.getEffect("solarRevolutionLimit"))){
                 gamePage.religion.praise();
             }
             else if (gamePage.tabs[5].rUpgradeButtons.filter(res => res.model.resourceIsLimited == false && (!(res.model.name.includes('(complete)')))).length > 0){
@@ -168,8 +170,11 @@ function autoPraise(){
                     }
                 }
             }
-            if (gamePage.resPool.get("faith").value >= gamePage.resPool.get("faith").maxValue*0.99){
-                if (gamePage.getEffect("voidResonance") > 0 && gamePage.religion.getRU("apocripha").on  && gamePage.religion.getRU("transcendence").on && (gamePage.religion.faith / gamePage.religion.getApocryphaBonus()) >  gamePage.resPool.get("faith").maxValue * Math.min(gamePage.religion.transcendenceTier, 10, Math.max(gamePage.religion.transcendenceTier * 0.05, gamePage.getEffect("solarRevolutionLimit")))){
+            if (gamePage.resPool.get("faith").value >= (gamePage.religion.transcendenceTier < 5 ?  Math.min(gamePage.resPool.get("faith").maxValue*0.99, (gamePage.religion.transcendenceTier + 1) * 10000) : gamePage.resPool.get("faith").maxValue*0.99)){
+                if (gamePage.religion.getRU("apocripha").on  && gamePage.religion.getRU("transcendence").on && gamePage.religion.transcendenceTier < 15 && gamePage.religion.getSolarRevolutionRatio() > Math.max((gamePage.religion.transcendenceTier + 1) * 0.05, gamePage.getEffect("solarRevolutionLimit"))) {
+                    gamePage.religion.resetFaith(1.01, false);
+                }
+                else if (gamePage.getEffect("voidResonance") > 0 && gamePage.religion.getRU("apocripha").on  && gamePage.religion.getRU("transcendence").on && (gamePage.religion.faith / gamePage.religion.getApocryphaBonus()) >  gamePage.resPool.get("faith").maxValue * Math.min(gamePage.religion.transcendenceTier, 10, Math.max(gamePage.religion.transcendenceTier * 0.05, gamePage.getEffect("solarRevolutionLimit")))){
                     gamePage.religion.resetFaith(1.01, false);
                 }
                 else if ( gamePage.religion.getRU("apocripha").on && gamePage.religion.getRU("transcendence").on && (gamePage.religion.faith / gamePage.religion.getApocryphaBonus()) >  gamePage.resPool.get("faith").maxValue * Math.min(gamePage.religion.transcendenceTier, 10, Math.max(gamePage.religion.transcendenceTier * 0.05, gamePage.getEffect("solarRevolutionLimit")))){
@@ -271,105 +276,112 @@ function autoPraise(){
 
 // Build buildings automatically
 function autoBuild() {
-        var btn = gamePage.tabs[0].children.filter(res => res.model.metadata && res.model.metadata.unlocked && !res.model.resourceIsLimited && Object.keys(craftPriority[0]).length > 0 ? ((res.model.metadata.name == craftPriority[0]) || (NotPriority_blds.indexOf(res.model.metadata.name) > -1) || (res.model.prices.filter(ff2 => craftPriority[3].indexOf(ff2.name) != -1 ).length == 0 ) ) : res.model.metadata );
-        for (var bl = 0 ;bl < btn.length; bl++) {
-             btn[bl].controller.updateEnabled(btn[bl].model);
-             if  (btn[bl].model.enabled){
-                 if (!switches['CollectResBReset'] || btn[bl].model.prices.filter(res => res.name == 'relic' || res.name == 'timeCrystal' || res.name == 'void').length == 0) {
-                     if ((goldebBuildings.includes(btn[bl].model.metadata.name) && !gamePage.ironWill) || (gamePage.ironWill && gamePage.bld.getBuildingExt('mint').meta.val > 3 && goldebBuildings.includes(btn[bl].model.metadata.name))){
-                           if ((gamePage.religion.getRU('solarRevolution').val == 1) || (btn[bl].model.metadata.name == 'temple' &&  btn[bl].model.metadata.val < 3) || (btn[bl].model.prices.filter(res => res.name == 'gold')[0].val < (gamePage.resPool.get('gold').value - 500)) || (gamePage.resPool.get('gold').value == gamePage.resPool.get('gold').maxValue) ) {
-                                      try {
-                                            btn[bl].controller.buyItem(btn[bl].model, {}, function(result) {
-                                            if (result) {
-                                                btn[bl].update();
-                                                gamePage.msg('Build: ' + btn[bl].model.name );
-                                                return;
-                                            }
-                                            });
-                                      } catch(err) {
-                                        console.log(err);
-                                      }
-                                 }
-                     }
-                     else if (btn[bl].model.metadata.name == "aiCore"){
-                         if ( btn[bl].model.metadata.val < Math.floor(spcEntangler.val*2.5)){
+    var btn = gamePage.tabs[0].children.filter(res => res.model.metadata && res.model.metadata.unlocked && !res.model.resourceIsLimited && Object.keys(craftPriority[0]).length > 0 ? ((res.model.metadata.name == craftPriority[0]) || (NotPriority_blds.indexOf(res.model.metadata.name) > -1) || (res.model.prices.filter(ff2 => craftPriority[3].indexOf(ff2.name) != -1 ).length == 0 ) ) : res.model.metadata );
+
+    var solarRevolution_val =  gamePage.religion.getRU('solarRevolution').val;
+    var mint_meta = gamePage.bld.getBuildingExt('mint').meta
+
+
+    for (var bl = 0; bl < btn.length; bl++) {
+        var btnModel = btn[bl].model;
+        var btnController = btn[bl].controller;
+        btnController.updateEnabled(btnModel);
+
+        if (btnModel.enabled) {
+            var btnMetadata = btnModel.metadata;
+            var btnPrices = btnModel.prices;
+
+            if (!switches['CollectResBReset'] || btnPrices.filter(res => res.name == 'relic' || res.name == 'timeCrystal' || res.name == 'void').length == 0) {
+                if ((golden_Buildings.includes(btnMetadata.name) && !gamePage.ironWill) || (gamePage.ironWill && mint_meta.val > 3 && golden_Buildings.includes(btnMetadata.name))) {
+                    if ((solarRevolution_val == 1) || (btnMetadata.name == 'temple' && btnMetadata.val < 3) || (btnPrices.filter(res => res.name == 'gold')[0].val < (gamePage.resPool.get('gold').value - 500)) || (gamePage.resPool.get('gold').value == gamePage.resPool.get('gold').maxValue)) {
+                        try {
+                            btnController.buyItem(btnModel, {}, function(result) {
+                                if (result) {
+                                    btn[bl].update();
+                                    gamePage.msg('Build: ' + btn[bl].model.name);
+                                    return;
+                                }
+                            });
+                        } catch (err) {
+                            console.log(err);
+                        }
+                    }
+                } else if (btnMetadata.name == "aiCore") {
+                    if (btnMetadata.val < Math.floor(spcEntangler.val * 2.5)) {
+                        try {
+                            btnController.buyItem(btnModel, {}, function(result) {
+                                if (result) {
+                                    btn[bl].update();
+                                    gamePage.msg('Build: ' + btn[bl].model.name);
+                                    return;
+                                }
+                            });
+                        } catch (err) {
+                            console.log(err);
+                        }
+                    }
+                } else if (btnMetadata.name == "field" && gamePage.challenges.isActive("postApocalypse") && gamePage.bld.getPollutionLevel() >= 5 && btnMetadata.val >= 95 - gamePage.time.getVSU("usedCryochambers").val - gamePage.bld.getPollutionLevel()) {
+                    // Do nothing
+                } else if (btnMetadata.name == "field" && !gamePage.science.get('engineering').researched && gamePage.calendar.season >= 1 && btnPrices.filter(res => res.name == "catnip")[0].val * 3 > gamePage.resPool.get('catnip').value && gamePage.resPool.get('catnip').value < gamePage.resPool.get('catnip').maxValue * 0.9) {
+                    // Do nothing
+                } else if (btnMetadata.name == "chronosphere") {
+                    if ((gamePage.workshop.get("chronoforge").researched && gamePage.bld.getBuildingExt('chronosphere').meta.val >= 10 && ((gamePage.time.meta[0].meta[5].unlocked && gamePage.resPool.get("timeCrystal").value < gamePage.timeTab.cfPanel.children[0].children[6].model.prices.filter(res => res.name == "timeCrystal")[0].val * (gamePage.timeTab.cfPanel.children[0].children[6].model.metadata.val > 3 ? 0.9 : 0.05)) || !gamePage.science.get("paradoxalKnowledge").researched)) ||
+                        (gamePage.bld.getBuildingExt('chronosphere').meta.val < 20 && gamePage.timeTab.visible && gamePage.resPool.get("timeCrystal").value - Chronosphere10SummPrices()["timeCrystal"] > 100 && gamePage.time.meta[0].meta[5].val > 0) ||
+                        (gamePage.bld.getBuildingExt('chronosphere').meta.val < 10 && ((gamePage.resPool.get("unobtainium").value >= Chronosphere10SummPrices()["unobtainium"] && gamePage.resPool.get("timeCrystal").value >= Chronosphere10SummPrices()["timeCrystal"]) || gamePage.resPool.get("unobtainium").value >= gamePage.resPool.get("unobtainium").maxValue))) {
+                        try {
+                            btnController.buyItem(btnModel, {}, function(result) {
+                                if (result) {
+                                    btn[bl].update();
+                                    gamePage.msg('Build: ' + btn[bl].model.name);
+                                    return;
+                                }
+                            });
+                        } catch (err) {
+                            console.log(err);
+                        }
+                    }
+                } else if (gamePage.ironWill) {
+                    if (!btnMetadata.effects.maxKittens) {
+                        if ((btnMetadata.name == "pasture" && !solarRevolution_val) ||
+                            (!gamePage.workshop.get("goldOre").researched && btnPrices.filter(res => res.name == 'science').length > 0) ||
+                            (gamePage.bld.getBuildingExt('workshop').meta.unlocked && gamePage.bld.getBuildingExt('workshop').meta.val == 0 && gamePage.bld.getBuildingExt('workshop').meta.name != btnMetadata.name && (btnPrices.filter(res => res.name == 'minerals' || res.name == 'slab').length > 0)) ||
+                            (!gamePage.workshop.get("goldOre").researched && gamePage.workshop.get("goldOre").unlocked && gamePage.bld.getBuildingExt('workshop').meta.val > 0 && (btnPrices.filter(res => res.name == 'minerals' || res.name == 'slab').length > 0)) ||
+                            ((gamePage.bld.getBuildingExt('amphitheatre').meta.unlocked && gamePage.bld.getBuildingExt('amphitheatre').meta.val <= 10 && gamePage.bld.getBuildingExt('workshop').meta.val > 0 && gamePage.bld.getBuildingExt('amphitheatre').meta.name != btnMetadata.name) && btnPrices.filter(res => res.name == 'minerals' || res.name == 'slab').length > 0) ||
+                            ((solarRevolution_val == 0 && gamePage.bld.getBuildingExt('temple').meta.unlocked && gamePage.bld.getBuildingExt('temple').meta.val < 3 && gamePage.bld.getBuildingExt('amphitheatre').meta.val > 10 && gamePage.science.get('philosophy').researched && gamePage.bld.getBuildingExt('temple').meta.name != btnMetadata.name) && btnPrices.filter(res => res.name == 'slab').length > 0) ||
+                            (((!gamePage.science.get('astronomy').researched && gamePage.science.get('astronomy').unlocked) || (!gamePage.science.get('philosophy').researched && gamePage.science.get('philosophy').unlocked) || (!gamePage.science.get('theology').researched && gamePage.science.get('theology').unlocked)) && btnPrices.filter(res => res.name == 'science').length > 0 && btnPrices.filter(res => res.name == 'science')[0].val > 1000)) {
+                            // Do nothing
+                        } else {
                             try {
-                                    btn[bl].controller.buyItem(btn[bl].model, {}, function(result) {
+                                btnController.buyItem(btnModel, {}, function(result) {
                                     if (result) {
                                         btn[bl].update();
-                                        gamePage.msg('Build: ' + btn[bl].model.name );
+                                        gamePage.msg('Build: ' + btn[bl].model.name);
                                         return;
                                     }
-                                    });
-                             } catch(err) {
-                                 console.log(err);
-                             }
-                         }
-                     }
-                     else if (btn[bl].model.metadata.name == "field" && gamePage.challenges.isActive("postApocalypse") && gamePage.bld.getPollutionLevel() >= 5 && btn[bl].model.metadata.val >= 95 - gamePage.time.getVSU("usedCryochambers").val - gamePage.bld.getPollutionLevel()){
-                               {}
-                           }
-                     else if (btn[bl].model.metadata.name == "field" && !gamePage.science.get('engineering').researched && gamePage.calendar.season >= 1 && btn[bl].model.prices.filter(res => res.name == "catnip")[0].val * 3 > gamePage.resPool.get('catnip').value && gamePage.resPool.get('catnip').value < gamePage.resPool.get('catnip').maxValue * 0.9){
-                               {}
-                           }
-                     else if (btn[bl].model.metadata.name == "chronosphere"){
-                        if ( ( gamePage.workshop.get("chronoforge").researched && gamePage.bld.getBuildingExt('chronosphere').meta.val >= 10 && ((gamePage.time.meta[0].meta[5].unlocked && gamePage.resPool.get("timeCrystal").value < gamePage.timeTab.cfPanel.children[0].children[6].model.prices.filter(res => res.name == "timeCrystal")[0].val * (gamePage.timeTab.cfPanel.children[0].children[6].model.metadata.val > 2 ? 0.9 : 0.05)) || !gamePage.science.get("paradoxalKnowledge").researched) ) || (gamePage.bld.getBuildingExt('chronosphere').meta.val < 20 && gamePage.timeTab.visible  &&  gamePage.resPool.get("timeCrystal").value - Chronosphere10SummPrices()["timeCrystal"] > 100 && gamePage.time.meta[0].meta[5].val > 0) || (gamePage.bld.getBuildingExt('chronosphere').meta.val < 10 && ((gamePage.resPool.get("unobtainium").value >= Chronosphere10SummPrices()["unobtainium"]  && gamePage.resPool.get("timeCrystal").value >= Chronosphere10SummPrices()["timeCrystal"] ) || gamePage.resPool.get("unobtainium").value >= gamePage.resPool.get("unobtainium").maxValue)) ){
-                            try {
-                                    btn[bl].controller.buyItem(btn[bl].model, {}, function(result) {
-                                    if (result) {
-                                        btn[bl].update();
-                                        gamePage.msg('Build: ' + btn[bl].model.name );
-                                        return;
-                                    }
-                                    });
-                             } catch(err) {
-                                 console.log(err);
-                             }
-                         }
-                     }
-                     else if (gamePage.ironWill){
-                           if (!btn[bl].model.metadata.effects.maxKittens)
-                          {
-                                if ((btn[bl].model.metadata.name == "pasture" && !gamePage.religion.getRU('solarRevolution').val) || (!gamePage.workshop.get("goldOre").researched && btn[bl].model.prices.filter(res => res.name == 'science').length > 0) ||
-                                    (gamePage.bld.getBuildingExt('workshop').meta.unlocked && gamePage.bld.getBuildingExt('workshop').meta.val == 0 && gamePage.bld.getBuildingExt('workshop').meta.name != btn[bl].model.metadata.name &&  (btn[bl].model.prices.filter(res => res.name == 'minerals' || res.name == 'slab').length > 0 )) ||
-                                    (!gamePage.workshop.get("goldOre").researched && gamePage.workshop.get("goldOre").unlocked && gamePage.bld.getBuildingExt('workshop').meta.val > 0 && (btn[bl].model.prices.filter(res => res.name == 'minerals' || res.name == 'slab').length > 0 )) ||
-                                    ((gamePage.bld.getBuildingExt('amphitheatre').meta.unlocked && gamePage.bld.getBuildingExt('amphitheatre').meta.val <= 10 && gamePage.bld.getBuildingExt('workshop').meta.val > 0  && gamePage.bld.getBuildingExt('amphitheatre').meta.name != btn[bl].model.metadata.name) && btn[bl].model.prices.filter(res => res.name == 'minerals' || res.name == 'slab').length > 0) ||
-                                    ((gamePage.religion.getRU('solarRevolution').val == 0 && gamePage.bld.getBuildingExt('temple').meta.unlocked && gamePage.bld.getBuildingExt('temple').meta.val < 3 && gamePage.bld.getBuildingExt('amphitheatre').meta.val > 10 && gamePage.science.get('philosophy').researched && gamePage.bld.getBuildingExt('temple').meta.name != btn[bl].model.metadata.name) && btn[bl].model.prices.filter(res => res.name == 'slab').length > 0) ||
-                                    (((!gamePage.science.get('astronomy').researched && gamePage.science.get('astronomy').unlocked)||(!gamePage.science.get('philosophy').researched && gamePage.science.get('philosophy').unlocked)||(!gamePage.science.get('theology').researched && gamePage.science.get('theology').unlocked)) && btn[bl].model.prices.filter(res => res.name == 'science').length > 0 && btn[bl].model.prices.filter(res => res.name == 'science')[0].val > 1000)
-                                )
-                                {}
-                                else{
-                                    try {
-                                            btn[bl].controller.buyItem(btn[bl].model, {}, function(result) {
-                                            if (result) {
-                                                btn[bl].update();
-                                                gamePage.msg('Build: ' + btn[bl].model.name );
-                                                return;
-                                            }
-                                            });
-                                     } catch(err) {
-                                         console.log(err);
-                                     }
-                                 }
-                         }
-                     }
-                     else {
-                             try {
-                                    btn[bl].controller.buyItem(btn[bl].model, {}, function(result) {
-                                    if (result) {
-                                        btn[bl].update();
-                                        gamePage.msg('Build: ' + btn[bl].model.name );
-                                        return;
-                                    }
-                                    });
-                             } catch(err) {
-                                 console.log(err);
-                             }
-                     }
-                 }
-             }
+                                });
+                            } catch (err) {
+                                console.log(err);
+                            }
+                        }
+                    }
+                } else {
+                    try {
+                        btnController.buyItem(btnModel, {}, function(result) {
+                            if (result) {
+                                btn[bl].update();
+                                gamePage.msg('Build: ' + btn[bl].model.name);
+                                return;
+                            }
+                        });
+                    } catch (err) {
+                        console.log(err);
+                    }
+                }
+            }
         }
+    }
 }
+
 
 // Build space stuff automatically
 function autoSpace() {
@@ -443,7 +455,7 @@ function autoSpace() {
 // Trade automatically
 function autoTrade() {
         GlobalMsg["ressourceRetrieval"] = ''
-        if (gamePage.time.meta[0].meta[5].unlocked && gamePage.resPool.get("timeCrystal").value > gamePage.timeTab.cfPanel.children[0].children[6].model.prices.filter(res => res.name == "timeCrystal")[0].val * (gamePage.timeTab.cfPanel.children[0].children[6].model.metadata.val > 2 ? 0.9 : 0.05))
+        if (gamePage.time.meta[0].meta[5].unlocked && gamePage.resPool.get("timeCrystal").value > gamePage.timeTab.cfPanel.children[0].children[6].model.prices.filter(res => res.name == "timeCrystal")[0].val * (gamePage.timeTab.cfPanel.children[0].children[6].model.metadata.val > 3 ? 0.9 : 0.05))
         {
           GlobalMsg["ressourceRetrieval"] = gamePage.timeTab.cfPanel.children[0].children[6].model.metadata.label + '(' + (gamePage.timeTab.cfPanel.children[0].children[6].model.metadata.val+1) + ') ' + Math.round((gamePage.resPool.get("timeCrystal").value / gamePage.timeTab.cfPanel.children[0].children[6].model.prices.filter(res => res.name == "timeCrystal")[0].val) * 100) + '%'
         }
@@ -472,7 +484,7 @@ function autoTrade() {
         let cultureRes = gamePage.resPool.get('culture');
         if ((cultureRes.value >= 10000 || cultureRes.value >= cultureRes.maxValue) || gamePage.challenges.isActive("pacifism")) {
                 embRefreshCnt += 1;
-                if (embRefreshCnt >= 100){
+                if (embRefreshCnt >= 10){
                      gamePage.diplomacyTab.render();
                      embRefreshCnt = 0;
                 }
@@ -501,7 +513,7 @@ function autoTrade() {
          }
 
         if(((gamePage.religion.getRU('solarRevolution').val == 1 || ((gamePage.challenges.isActive("atheism") || gamePage.challenges.isActive("pacifism") ) && (gamePage.resPool.get('gold').value > 550 || gamePage.bld.getBuildingExt('mint').meta.val > 0 )  )) || (gamePage.resPool.get('gold').value == gamePage.resPool.get('gold').maxValue && gamePage.resPool.get('gold').maxValue < 500)) || (gamePage.ironWill)){
-            if ((goldResource.value > goldResource.maxValue * 0.95 || ((gamePage.bld.getBuildingExt('mint').meta.val > 0  && goldResource.value > (gamePage.bld.getBuildingExt('accelerator').meta.val < 1 ? 90 : Math.min(gamePage.bld.getBuildingExt('accelerator').meta.val * 1000, 10000))) ||  gamePage.religion.getRU("transcendence").on) || ((gamePage.challenges.isActive("atheism") || gamePage.challenges.isActive("pacifism")) && goldResource.value > 500)   ) || (gamePage.ironWill && goldResource.value > (gamePage.religion.getRU('solarRevolution').val == 1 ? 15 : 600) ) || (gamePage.resPool.get('blueprint').value < 100 && gamePage.religion.getRU('solarRevolution').val == 1 && goldResource.value > 90)) {
+            if ((goldResource.value > goldResource.maxValue * 0.95 || ((gamePage.bld.getBuildingExt('mint').meta.val > 0  && goldResource.value > (gamePage.bld.getBuildingExt('accelerator').meta.val < 1 ? 90 : Math.min(gamePage.bld.getBuildingExt('accelerator').meta.val * 1000, 10000))) ||  gamePage.religion.getRU("transcendence").on) || ((gamePage.challenges.isActive("atheism") || gamePage.challenges.isActive("pacifism")) && goldResource.value > 500)   ) || (gamePage.ironWill && goldResource.value > (gamePage.religion.getRU('solarRevolution').val == 1 ? 15 : 600) ) || (gamePage.resPool.get('blueprint').value < 300 && gamePage.religion.getRU('solarRevolution').val == 1 && goldResource.value > 90)) {
                 if (gamePage.diplomacyTab.racePanels.length != gamePage.diplomacy.races.filter(race => race.unlocked).length) {
                     gamePage.diplomacyTab.render();
                 }
@@ -569,7 +581,12 @@ function autoTrade() {
                             }
                     }
                     else {
-                        gamePage.diplomacy.tradeAll(gamePage.diplomacy.get(trade[0]));
+                        if (trade[0] == 'nagas' &&  gamePage.resPool.get('ivory').value < gamePage.resPool.get('slab').value ) {
+                            // Do nothing
+                        }
+                        else {
+                             gamePage.diplomacy.tradeAll(gamePage.diplomacy.get(trade[0]));
+                        }
                     }
                 }
             }
@@ -619,22 +636,22 @@ function autoCraft2() {
                 ["slab", [["minerals",250]], Math.min(gamePage.resPool.get("minerals").value/250*(gamePage.getCraftRatio()+1),50000), gamePage.ironWill ? false : true, true],
                 ["steel", [["iron",100],["coal",100]],Math.min(Math.max(Math.min(gamePage.resPool.get("iron").value/100*gamePage.getCraftRatio()+1,gamePage.resPool.get("coal").value/100*(gamePage.getCraftRatio()+1)),75),50000),true, true],
                 (gamePage.bld.getBuildingExt('reactor').meta.unlocked && !gamePage.resPool.isStorageLimited(gamePage.bld.getPrices('reactor'))) ?
-                ["plate", [["iron",125]],gamePage.ironWill ? 15 : gamePage.resPool.get("plate").value < 200 ? 200 : gamePage.bld.getPrices('reactor')[1].val, false, true] :
-                ["plate", [["iron",125]],gamePage.ironWill ? 15 : gamePage.resPool.get("plate").value < 200 ? 200 :  Math.min(gamePage.resPool.get("iron").value/125*(gamePage.getCraftRatio()+1),50000),true, true],
-                ["concrate", [["steel",25],["slab",2500]],0,true, true],
+                ["plate", [["iron",125]],gamePage.ironWill ? 15 : gamePage.resPool.get("plate").value < 200 ? 200 : (gamePage.resPool.get("titanium").value > 300 ? gamePage.bld.getPrices('reactor')[1].val : 200), false, true] :
+                ["plate", [["iron",125]],gamePage.ironWill ? 15 : (gamePage.resPool.get("plate").value < 150 && gamePage.science.get("navigation").researched) ? 150 :  Math.min(gamePage.resPool.get("iron").value/125*(gamePage.getCraftRatio()+1),50000),true, true],
+                ["concrate", [["steel",25],["slab",2500]], gamePage.resPool.get("eludium").value > 125 ? gamePage.resPool.get("steel").value : 0, true, true],
                 ["gear", [["steel",15]],25,true, true],
-                ["alloy", [["steel",75],["titanium",10]], gamePage.resPool.get("eludium").value > 125 ? gamePage.resPool.get("steel").value : Math.min(Math.max(Math.min(gamePage.resPool.get("steel").value/75*(gamePage.getCraftRatio()+1),gamePage.resPool.get("titanium").value/10*(gamePage.getCraftRatio()+1)), gamePage.workshop.get("geodesy").researched ? 50 : 0),1000),false, true],
+                ["alloy", [["steel",75],["titanium",10]], gamePage.resPool.get("eludium").value > 125 ? gamePage.resPool.get("steel").value : (gamePage.resPool.get("titanium").value < 20 ? 0 : Math.min(Math.max(Math.min(gamePage.resPool.get("steel").value/75*(gamePage.getCraftRatio()+1),gamePage.resPool.get("titanium").value/10*(gamePage.getCraftRatio()+1)), gamePage.workshop.get("geodesy").researched ? 50 : 0),1000)),false, true],
                 ["eludium", [["unobtainium",1000],["alloy",2500]], gamePage.resPool.get("eludium").value < 125 ? 125 : (gamePage.bld.getBuildingExt('chronosphere').meta.val < 10 ? 125 : gamePage.resPool.get("eludium").value < 500 ? 500 : ((gamePage.resPool.get("unobtainium").value > gamePage.resPool.get("unobtainium").maxValue * 0.9 || gamePage.resPool.get("unobtainium").value >= Math.max(gamePage.resPool.get("eludium").value, (gamePage.resPool.get("timeCrystal").value > 1000000 ? gamePage.resPool.get("unobtainium").maxValue * 0.3 : (gamePage.resPool.get("eludium").value < 100000 ? 200000 : gamePage.resPool.get("unobtainium").maxValue * 0.1)))) ? gamePage.resPool.get("timeCrystal").value * 2 + 1 : 0)), false, true],
                 ["scaffold", [["beam",50]],0,true, true],
-                ["ship", [["scaffold",100],["plate",150],["starchart",25]],gamePage.workshop.get("geodesy").researched ? 100 : (gamePage.resPool.get("starchart").value > 500 || gamePage.resPool.get("ship").value > 500) ? 100 + (gamePage.resPool.get("starchart").value - 500)/25 :100 ,true, true],
+                ["ship", [["scaffold",100],["plate",150],["starchart",25]],!gamePage.workshop.get("geodesy").researched ? 100 : (gamePage.resPool.get("starchart").value > 600 || gamePage.resPool.get("ship").value > 500) ? Math.min(gamePage.resPool.get("plate").value ,(100 + (gamePage.resPool.get("starchart").value - 500)/25)) :100 ,true, true],
                 ["tanker", [["ship",200],["kerosene",gamePage.resPool.get('oil').maxValue * 2],["alloy",1250],["blueprint",5]],0,true, true],
                 ["kerosene", [["oil",7500]],Math.min(gamePage.resPool.get("oil").value/7500*(gamePage.getCraftRatio()+1),50000),true, true],
                 ["parchment", [["furs",175]],gamePage.resPool.get("starchart").value > 1 ? (gamePage.religion.getRU('solarRevolution').val == 1 ? gamePage.resPool.get("furs").value / 3 : 100) : 0,true, true],
                 ["manuscript", [["parchment",25],["culture",400]], gamePage.ironWill ? (gamePage.resPool.get('culture').value > 1600 || gamePage.diplomacy.get('nagas').unlocked ? 50 : 0) : ((gamePage.religion.getRU('solarRevolution').val == 1 && gamePage.resPool.get('culture').value >= gamePage.resPool.get('culture').maxValue) ? gamePage.resPool.get("parchment").value / 3 : 200), true, gamePage.ironWill ? (gamePage.resPool.get('culture').value > 1600 || gamePage.diplomacy.get('nagas').unlocked ? true : false) : true],
                 ["compedium", [["manuscript",50],["science",10000]],gamePage.ironWill ? (gamePage.science.get('astronomy').researched ? Math.min(gamePage.resPool.get("science").value/10000*(gamePage.getCraftRatio()+1),1500): 0) : (gamePage.religion.getRU('solarRevolution').val == 1 ? gamePage.resPool.get("manuscript").value / 3 : 110), true, gamePage.resPool.get("manuscript").value > 200 ? true : false],
-                ["blueprint", [["compedium",25],["science",25000]],0,true, true],
+                ["blueprint", [["compedium",25],["science",25000]],0,true, gamePage.resPool.get("compedium").value > 200 ? true : false],
                 ["thorium", [["uranium",250]],Math.min(gamePage.resPool.get("uranium").value/250*(gamePage.getCraftRatio()+1),50000),true, true],
-                ["megalith", [["slab",50],["beam",25],["plate",5]],0,true, gamePage.resPool.get("manuscript").value > 200 ? true : false],
+                ["megalith", [["slab",50],["beam",25],["plate",5]],0,true, gamePage.resPool.get("manuscript").value > 300 ? true : false],
                 ["tMythril", [["bloodstone",5],["ivory",1000],["titanium",500]],5, true, (gamePage.ironWill && gamePage.resPool.get("tMythril").value < 5) ? true : false]
             ]
 
@@ -643,25 +660,25 @@ function autoCraft2() {
                 var Priority_blds = {
                     "hut" : gamePage.science.get('agriculture').researched ? (gamePage.bld.getBuildingExt('mine').meta.val > 0 ? 7 * ((gamePage.resPool.get("paragon").value > 200 || gamePage.village.getKittens() > 70) ? 1 : (!gamePage.challenges.anyChallengeActive() && gamePage.religion.getRU('solarRevolution').val == 1 && gamePage.resPool.get('paragon').value < 200) ? 10 : 2) : 5) : 1,
                     "logHouse" : 7 * ((gamePage.resPool.get("paragon").value > 200 || gamePage.village.getKittens() > 70) ? 1 : (!gamePage.challenges.anyChallengeActive() && gamePage.religion.getRU('solarRevolution').val == 1 && gamePage.resPool.get('paragon').value < 200) ? 10 : 2),
-                    "mansion" :  (gamePage.resPool.get("titanium").value > 100 && (gamePage.resPool.get("steel").value > 300 || gamePage.bld.getBuildingExt('mansion').meta.val > 10)) ? 1.5 : 0.00000001,
-                    "steamworks" : (gamePage.challenges.isActive("pacifism") && gamePage.bld.getBuildingExt('steamworks').meta.val < 5) ? 50 : ((gamePage.bld.getBuildingExt('magneto').meta.val > 0 && (gamePage.resPool.get("steel").value > 300 || gamePage.bld.getBuildingExt('steamworks').meta.val > 10)) ? 1 : 0.00000001),
-                    "magneto" : (gamePage.resPool.get("titanium").value > 50 && (gamePage.resPool.get("steel").value > 300 || gamePage.bld.getBuildingExt('magneto').meta.val > 10)) ? 1 : 0.00000001,
-                    "factory"  : gamePage.resPool.get("titanium").value > 100 ? 3 : 0.00000001,
-                    "reactor" : gamePage.resPool.get("titanium").value > 100 ? 10 : 0.00000001,
+                    "mansion" :  (gamePage.resPool.get("titanium").value > 300 && (gamePage.resPool.get("steel").value > 300 || gamePage.bld.getBuildingExt('mansion').meta.val > 10)) ? 1.5 : 0.00000001,
+                    "steamworks" : (gamePage.challenges.isActive("pacifism") && gamePage.bld.getBuildingExt('steamworks').meta.val < 5) ? 50 : ((gamePage.bld.getBuildingExt('magneto').meta.val > 0) ? 2 : 0.00000001),
+                    "magneto" : gamePage.bld.getBuildingExt('magneto').meta.val > 10 ? 2 : 0.00000001,
+                    "factory"  : (gamePage.resPool.get("titanium").value > 300 && gamePage.bld.getBuildingExt('magneto').meta.val > 10) ? 3 : 0.00000001,
+                    "reactor" : gamePage.bld.getBuildingExt('magneto').meta.val > 10 ? 10 : 0.00000001,
                     "warehouse" : gamePage.bld.getBuildingExt('warehouse').meta.stage == 1 ? 0 : 0.0001,
-                    "quarry" : gamePage.bld.getBuildingExt('quarry').meta.val < 10 ? 10 : 2,
-                    "harbor" : (gamePage.bld.getBuildingExt('harbor').meta.val > 100 || (gamePage.resPool.get("ship").value > 0 && gamePage.resPool.get("plate").value > gamePage.bld.getPrices('harbor')[2].val)) ? 1 : 0.0001,
-                    "smelter" : gamePage.bld.getBuildingExt("amphitheatre").meta.val > 0 ? (gamePage.religion.getRU("solarRevolution").val == 0 ? 100 : 5) : gamePage.challenges.isActive("pacifism") ? 100: 0.0001,
-                    "observatory" : (!gamePage.challenges.isActive("blackSky") & gamePage.resPool.get("ship").value == 0 && gamePage.religion.getRU("solarRevolution").val == 1 && (gamePage.resPool.get("plate").value >= 150 && gamePage.resPool.get("starchart").value < 25) ) ? 100 : (gamePage.resPool.get("ship").value == 0 && gamePage.bld.getBuildingExt('observatory').meta.val > 10  && gamePage.resPool.get("starchart").value >= 25) ? 0.00000001 : ((gamePage.religion.getRU("solarRevolution").val == 1 || gamePage.challenges.isActive("atheism")) ? 1 : 0.0001),
-                    "oilWell" : (gamePage.bld.getBuildingExt('oilWell').meta.val == 0 && gamePage.resPool.get("coal").value > 0 ) ? 10 : 1,
+                    "quarry" : gamePage.bld.getBuildingExt('quarry').meta.val < 5 ? 10 : 1.1,
+                    "harbor" : (gamePage.bld.getBuildingExt('harbor').meta.val > 100 || (gamePage.resPool.get("ship").value > 0 && gamePage.resPool.get("plate").value > gamePage.bld.getPrices('harbor').filter(res => res.name == "plate")[0].val)) ? 1 : 0.0001,
+                    "smelter" : gamePage.bld.getBuildingExt("amphitheatre").meta.val > 0 ? (gamePage.religion.getRU("solarRevolution").val == 0 ? (  (gamePage.resPool.get("gold").value < 500 && gamePage.bld.getBuildingExt("smelter").meta.on == gamePage.bld.getBuildingExt("smelter").meta.val) ? 100 : 5) : 5) : gamePage.challenges.isActive("pacifism") ? 100: 0.0001,
+                    "observatory" : (!gamePage.challenges.isActive("blackSky") & gamePage.resPool.get("ship").value == 0 && gamePage.religion.getRU("solarRevolution").val == 1) ? 100 : (gamePage.resPool.get("ship").value == 0 && gamePage.bld.getBuildingExt('observatory').meta.val > 10  && gamePage.resPool.get("starchart").value >= 25) ? 0.00000001 : ((gamePage.religion.getRU("solarRevolution").val == 1 || gamePage.challenges.isActive("atheism")) ? 0.5 : 0.0001),
+                    "oilWell" : (gamePage.bld.getBuildingExt('oilWell').meta.val == 0 && gamePage.resPool.get("coal").value > 0 ) ? 10 : (gamePage.resPool.get("oil").value < 500 ? 1 : 0.01),
                     "lumberMill" :gamePage.bld.getPrices("lumberMill").filter(res => res.name == "iron")[0].val + 150 <= gamePage.resPool.get("iron").value ? 1 : (gamePage.religion.getRU("solarRevolution").val == 1 ? 0.005 : 0.0001) * (gamePage.resPool.get("paragon").value > 200 ? 1 : 2),
                     "calciner" : ((gamePage.resPool.get("titanium").value > 0 && (gamePage.bld.getBuildingExt('calciner').meta.val > 10 || gamePage.resPool.get("oil").value > gamePage.bld.getPrices('calciner').filter(res => res.name == "oil")[0].val)) || gamePage.challenges.isActive("blackSky")) ? (gamePage.bld.getPrices('calciner').filter(res => res.name == "oil")[0].val < gamePage.resPool.get("oil").maxValue * 0.3 || (gamePage.resPool.get("kerosene").value > gamePage.resPool.get("oil").maxValue * 0.4 && gamePage.bld.getPrices('calciner').filter(res => res.name == "oil")[0].val < gamePage.resPool.get("kerosene").value )) ? (gamePage.bld.getBuildingExt('calciner').meta.val == 0 ? 10 : 1.1) :  0.00000001 : 0.00000001,
                     "biolab" : gamePage.bld.getBuildingExt('biolab').meta.val > 500 ? 1 : 0.0001,
                     "aqueduct" : gamePage.bld.getBuildingExt('aqueduct').meta.stage == 1 ? 0.01 : 0.1,
-                    "amphitheatre" : gamePage.bld.getBuildingExt("amphitheatre").meta.stage == 1 ? 0.01 :  (gamePage.bld.getBuildingExt('amphitheatre').meta.val == 0 && gamePage.resPool.get('parchment').value > 0) ? 7 :  gamePage.resPool.get('parchment').value > 0 ? 3 : 0.00000001,
+                    "amphitheatre" : (gamePage.bld.getBuildingExt('amphitheatre').meta.val == 0 && gamePage.resPool.get('parchment').value > 0) ? 7 : (gamePage.bld.getBuildingExt('amphitheatre').meta.stage == 0 && gamePage.resPool.get('parchment').value > 0) ? 3 : 0.00000001,
                     "ziggurat" : gamePage.bld.getBuildingExt('ziggurat').meta.val > 100 ? 1 :  (gamePage.bld.getBuildingExt('ziggurat').meta.val < 20 && gamePage.bld.getPrices("ziggurat").filter(res => res.name == "blueprint")[0].val <= gamePage.resPool.get("blueprint").value && gamePage.science.get('theology').researched && gamePage.resPool.get("blueprint").value > 100 ) ? 0.1 : (gamePage.resPool.get("blueprint").value > 500 ? 0.01 : 0.00000001),
                     "mine":  gamePage.bld.getBuildingExt('mine').meta.val > 0 ? 1 * (gamePage.resPool.get("paragon").value > 200 ? 1 : 2) : 10,
-                    "workshop":  gamePage.bld.getBuildingExt('workshop').meta.val > 0 ? 1 : 10,
+                    "workshop":  gamePage.bld.getBuildingExt('workshop').meta.val > 0 ? 2 : 10,
                     "pasture": 0.0001,
                     "library": gamePage.bld.getBuildingExt('library').meta.val <= 10 ? 1 : 0.01,
                     "field" : (gamePage.challenges.isActive("postApocalypse") && gamePage.bld.getPollutionLevel() >= 5 || !gamePage.science.get('engineering').researched) ? 0 : 0.01
@@ -785,11 +802,12 @@ function autoCraft2() {
             if (gamePage.science.get("construction").researched && gamePage.tabs[3].visible ) {
                 for (var g = 0; g < resourcesAll.length; g++) {
                     if (resourcesAll[g][0] in reslist) {
-                        if (resourcesAll[g][2] < reslist[resourcesAll[g][0]]){
+                        if (Math.max(resourcesAll[g][2], gamePage.resPool.get(resourcesAll[g][0]).value) < reslist[resourcesAll[g][0]]){
                             resourcesAll[g][2] = reslist[resourcesAll[g][0]]
+                            resourcesAll[g][4] =  true
                         }
                         resourcesAll[g][3] =  false
-                        resourcesAll[g][4] =  true
+
                     }else{
                         for (var z = 0; z < resourcesAll[g][1].length; z++) {
                             if (resourcesAll[g][1][z][0] in reslist && (gamePage.resPool.get((resourcesAll[g][1][z][0]).maxValue > 0 && gamePage.resPool.get(resourcesAll[g][1][z][0]).value < gamePage.resPool.get(resourcesAll[g][1][z][0]).maxValue) || gamePage.resPool.get(resourcesAll[g][1][z][0]).value < reslist[resourcesAll[g][1][z][0]] * 2)  && !["plate", "ship", "eludium", "alloy"].includes(resourcesAll[g][0])) {
@@ -816,11 +834,11 @@ function autoCraft2() {
 
                                 for (var g = 0; g < resourcesAll.length; g++) {
                                     if (resourcesAll[g][0] == upgrades_craft[pru][1][j][0]) {
-                                        if (resourcesAll[g][2] < upgrades_craft[pru][1][j][1]){
+                                        if (Math.max(resourcesAll[g][2], gamePage.resPool.get(resourcesAll[g][0]).value) < upgrades_craft[pru][1][j][1]){
                                             resourcesAll[g][2] =  upgrades_craft[pru][1][j][1]
+                                            resourcesAll[g][4] =  true
                                         }
                                         resourcesAll[g][3] =  false
-                                        resourcesAll[g][4] =  true
                                     }
                                 }
                                 let respack = resourcesAll.filter(res => res[0] == upgrades_craft[pru][1][j][0])[0][1]
@@ -904,7 +922,7 @@ function autoCraft2() {
 
                          if (flag == true && cnt > 0) {
                             if (resourcesAllF[crf][0] == "ship") {
-                                if (gamePage.resPool.get("ship").value < 5000 || gamePage.resPool.get("starchart").value > 1500){
+                                if (gamePage.resPool.get("ship").value < 100 || (gamePage.resPool.get("ship").value < 5000 && gamePage.workshop.get("geodesy").researched) || gamePage.resPool.get("starchart").value > 1500){
                                     gamePage.craft(resourcesAllF[crf][0], cnt);
                                 }
                             }
@@ -1055,14 +1073,23 @@ function autoParty() {
                 if (gamePage.calendar.festivalDays < 400*30) {
                     if(catpowerP > 1500 * tclvl && culture > 5000 * tclvl && parchment > 2500 * tclvl){
                         gamePage.village.holdFestival(tclvl);
+                        gamePage.resPool.addResEvent("manpower", -1500 * tclvl);
+                        gamePage.resPool.addResEvent("culture", -5000 * tclvl);
+                        gamePage.resPool.addResEvent("parchment", -2500 * tclvl);
                     }
                     else{
                         gamePage.village.holdFestival(1);
+                        gamePage.resPool.addResEvent("manpower", -1500 * 1);
+                        gamePage.resPool.addResEvent("culture", -5000 * 1);
+                        gamePage.resPool.addResEvent("parchment", -2500 * 1);
                     }
                 }
 			}
 			else if (gamePage.calendar.festivalDays == 0 && catpowerP > gamePage.resPool.get('manpower').maxValue * 0.5) {
 			    gamePage.village.holdFestival(1);
+			    gamePage.resPool.addResEvent("manpower", -1500 * 1);
+                gamePage.resPool.addResEvent("culture", -5000 * 1);
+                gamePage.resPool.addResEvent("parchment", -2500 * 1);
 			}
 		}
 	}
@@ -1096,7 +1123,7 @@ function autozig() {
             }
         }
         if (!switches['CollectResBReset']) {
-            if (!gamePage.workshop.get("relicStation").researched && (gamePage.resPool.get('relic').value  < (gamePage.challenges.isActive("energy") ? 25 : 5) && gamePage.resPool.get('timeCrystal').value > 50)) {
+            if (!gamePage.workshop.get("relicStation").researched && (!gamePage.workshop.get("chronoforge").researched || gamePage.religion.getTU("blackNexus").on > 5) && (gamePage.resPool.get('relic').value  < (gamePage.challenges.isActive("energy") ? 25 : 5) && gamePage.resPool.get('timeCrystal').value > 50)) {
                 if (gamePage.religionTab.refineTCBtn && gamePage.religionTab.refineTCBtn.model.visible){
                     gamePage.religionTab.refineTCBtn.controller.buyItem(gamePage.religionTab.refineTCBtn.model, {}, function(result) {
                         if (result) {
@@ -1183,7 +1210,7 @@ function autozig() {
 // Auto assign new kittens to selected job
 function autoAssign() {
         var resourcesAssign = {
-       		"catnip": (gamePage.village.getKittens() > 2  ||  gamePage.workshop.get("mineralHoes").researched ) ? ["catnip", "farmer", gamePage.resPool.get("catnip").value < gamePage.resPool.get("catnip").maxValue * 0.1 ? 9 : 999, (gamePage.resPool.get('paragon').value < 200 && gamePage.bld.getBuildingExt('temple').meta.val < 1 && gamePage.village.getKittens() > 2) ? 0.1 : 1] : ["wood","woodcutter", 1, 1],
+       		"catnip": (gamePage.challenges.isActive("winterIsComing") && (gamePage.bld.getBuildingExt('aqueduct').meta.val < 10 && gamePage.resPool.get("catnip").value < gamePage.village.getKittens() * 100)) ? ["catnip", "farmer", 0.001, 0.001] : ((gamePage.village.getKittens() > 2  ||  gamePage.workshop.get("mineralHoes").researched ) ? ["catnip", "farmer", gamePage.resPool.get("catnip").value < gamePage.resPool.get("catnip").maxValue * 0.1 ? 9 : 999, (gamePage.resPool.get('paragon').value < 200 && gamePage.bld.getBuildingExt('temple').meta.val < 1 && gamePage.village.getKittens() > 2) ? 0.1 : 1] : ["wood","woodcutter", 1, 1]),
         	"wood, beam": ["wood","woodcutter",(gamePage.resPool.get("beam").value < gamePage.resPool.get("slab").value && gamePage.resPool.get("beam").value < gamePage.resPool.get("wood").value) ?  Math.max(0.1, gamePage.resPool.get("wood").value/gamePage.resPool.get("wood").maxValue) : gamePage.resPool.get("beam").value > gamePage.resPool.get("wood").maxValue ?  Math.max(0.1, gamePage.resPool.get("beam").value/gamePage.resPool.get("wood").maxValue / ((gamePage.resPool.get("wood").maxValue / ((gamePage.getResourcePerTick("wood", 0) * 5) / gamePage.village.getJob('woodcutter').value)) / gamePage.village.getJob('woodcutter').value / gamePage.village.getJob('woodcutter').value))  : 1 , 2],
         	"minerals, slab": ["minerals","miner",(gamePage.resPool.get("slab").value < gamePage.resPool.get("beam").value && gamePage.resPool.get("slab").value < gamePage.resPool.get("minerals").value) ?  Math.max(0.1, gamePage.resPool.get("minerals").value/gamePage.resPool.get("minerals").maxValue) :  gamePage.resPool.get("slab").value > gamePage.resPool.get("minerals").maxValue ?  Math.max(0.1, gamePage.resPool.get("slab").value/gamePage.resPool.get("minerals").maxValue / ((gamePage.resPool.get("minerals").maxValue / ((gamePage.getResourcePerTick("minerals", 0) * 5) / gamePage.village.getJob('miner').value)) / gamePage.village.getJob('miner').value / gamePage.village.getJob('miner').value)) : 1 , (gamePage.resPool.get("minerals").value < 275 && gamePage.challenges.isActive("winterIsComing")) ? 0.01 : 2],
             "science": ["science", "scholar",(gamePage.resPool.get("science").value < gamePage.resPool.get("science").maxValue * 0.5) ? 0.5 : 1, (gamePage.science.get('engineering').researched  && gamePage.resPool.get("science").value > 100) ? 1 : (gamePage.village.getKittens() > 1 ? 0.1 : 0.001)],
@@ -1231,13 +1258,13 @@ function autoAssign() {
 
         });
 
+        kittens_cnt = gamePage.village.getKittens()
         if (game.village.getFreeKittens() != 0 ) {
             gamePage.village.assignJob(gamePage.village.getJob(restmpq[0][1]),1);
-        }
-        else if (gamePage.village.getKittens() > 0) {
-            restmpdel = restmpq.filter(res => gamePage.village.getJob(res[1]).value > (gamePage.village.getKittens() > 10 ? 1 : 0));
+        }else if (kittens_cnt > 0) {
+            restmpdel = restmpq.filter(res => gamePage.village.getJob(res[1]).value > ((gamePage.resPool.get(res[0]).value >= gamePage.resPool.get(res[0]).maxValue) ? 1 : kittens_cnt/2/7));
             if (restmpdel.length > 0){
-                let cnt = gamePage.resPool.get(restmpdel[restmpdel.length - 1][0]).value >= gamePage.resPool.get(restmpdel[restmpdel.length - 1][0]).maxValue ? gamePage.village.getJob(restmpdel[restmpdel.length - 1][1]).value -1 : Math.max(Math.floor(gamePage.village.getJob(restmpdel[restmpdel.length - 1][1]).value * 0.1),1)
+                let cnt = Math.max(Math.floor(gamePage.village.getJob(restmpdel[restmpdel.length - 1][1]).value * 0.1),1)
                 if (cnt > 0) {
                     gamePage.village.sim.removeJob(restmpdel[restmpdel.length - 1][1],cnt);
                     gamePage.village.assignJob(gamePage.village.getJob(restmpq[0][1]),cnt);
@@ -1245,11 +1272,11 @@ function autoAssign() {
 
             }
         }
-        if (gamePage.science.get('civil').researched && !gamePage.ironWill && gamePage.resPool.get("gold").value > 600){
-            if (IincKAssign > 100) {
+        if (gamePage.science.get('civil').researched && !gamePage.ironWill && gamePage.resPool.get("gold").value > 1000){
+            if (IincKAssign > 10) {
                   let prkitten = gamePage.village.sim.kittens.filter(kitten => kitten.job == restmpq[0][1]).sort(function(a, b) {return  b.skills[restmpq[0][1]] - a.skills[restmpq[0][1]];})[0]
                   if (prkitten){
-                      gamePage.villageTab.censusPanel.census.makeLeader(prkitten);
+                      gamePage.village.makeLeader(prkitten);
                       if (gamePage.village.sim.expToPromote(prkitten.rank, prkitten.rank+1, prkitten.exp)[0] && gamePage.village.sim.goldToPromote(prkitten.rank, prkitten.rank+1, gamePage.resPool.get("gold").value)[1] < gamePage.resPool.get("gold").value * 0.3) {
                          gamePage.village.sim.promote(prkitten);
                       }
@@ -1617,9 +1644,8 @@ function Timepage() {
             }
 
 
-
             if (!switches['CollectResBReset'] || gamePage.time.getCFU("ressourceRetrieval").val >= 1) {
-                if (gamePage.time.meta[0].meta[5].val > 0 && gamePage.calendar.cycle != 5 && (!gamePage.challenges.isActive("1000Years") || gamePage.resPool.get("void").value > 800)){
+                if (gamePage.time.getCFU("ressourceRetrieval").val > 0 && (!gamePage.challenges.isActive("1000Years") || gamePage.resPool.get("void").value > 800)){
                     if ( gamePage.resPool.get("unobtainium").value < gamePage.resPool.get("unobtainium").maxValue * 0.9 && (gamePage.resPool.energyProd - gamePage.resPool.energyCons >= 0 || gamePage.resPool.get("antimatter").value >= gamePage.resPool.get("antimatter").maxValue) && gamePage.calendar.day > 1 && (  (gamePage.calendar.cycle != 5 && gamePage.prestige.getPerk("numerology").researched) || (gamePage.time.meta[0].meta[5].val >= (gamePage.resPool.get('paragon').value > 100 ? 1 : 3) && tc_val >= (gamePage.resPool.get('paragon').value > 100 ? 1 : gamePage.time.meta[0].meta[5].val * 1000) )) && (((gamePage.calendar.cycle != 5 && gamePage.prestige.getPerk("numerology").researched) || ( (gamePage.time.meta[0].meta[5].val >= 3 || gamePage.time.heat < 50)  && (gamePage.workshop.get("relicStation").unlocked && !gamePage.workshop.get("relicStation").researched && gamePage.science.get("paradoxalKnowledge").researched)  && (tc_val > (fast_combust ? 5 : 45) && gamePage.bld.getBuildingExt('chronosphere').meta.val >= 10) && gamePage.space.getBuilding('sunlifter').val > 0 ))  || ( gamePage.time.meta[0].meta[5].val >= (gamePage.resPool.get('paragon').value > 100 ? 1 : 3) && ((gamePage.time.heat == 0 && ((gamePage.calendar.cycle != 5 && gamePage.prestige.getPerk("numerology").researched) || (gamePage.calendar.season > 0 && gamePage.time.meta[0].meta[5].val >= 3) ))  || ( (fast_combust ? true : gamePage.time.heat + 50 * factor < gamePage.getEffect("heatMax")) && tc_val > (gamePage.resPool.get('paragon').value > 100 ? (gamePage.time.meta[0].meta[5].val >= 3 ? 5 : 5000) : gamePage.time.meta[0].meta[5].val * 1000)  && gamePage.calendar.cycle == 5 &&  (gamePage.calendar.season > 0 || (fast_combust ? true : gamePage.time.heat < gamePage.getEffect("heatMax") * 0.5 && gamePage.calendar.day < 10))))))) {
                         if (gamePage.time.heat > gamePage.getEffect("heatMax") * 0.9 && factor *  chronoforge[0].controller.getPricesMultiple(chronoforge[0].model, 5).timeCrystal <= gamePage.getEffect("heatMax")  &&  [4, 5].indexOf(gamePage.calendar.cycle) == -1 && gamePage.time.meta[0].meta[5].val >= 1 && tc_val >= gamePage.timeTab.cfPanel.children[0].children[0].controller.getPricesMultiple(gamePage.timeTab.cfPanel.children[0].children[0].model, 5).timeCrystal ) {
                             if (gamePage.getEffect("heatMax") - gamePage.time.heat > chronoforge[0].controller.getPricesMultiple(chronoforge[0].model, 5).timeCrystal * factor){
@@ -1661,12 +1687,16 @@ function Timepage() {
                         }
                     }
                 }
+                else if (gamePage.calendar.cycle != 5 && gamePage.time.getCFU("ressourceRetrieval").val == 0 && tc_val >= 1 && gamePage.time.heat < gamePage.getEffect("heatMax") / 2){
+                    chronoforge[0].controller.doShatterAmt(chronoforge[0].model, 1);
+                    chronoforge[0].update();
+                }
             }
             if ( gamePage.time.getCFU("ressourceRetrieval").unlocked || (gamePage.time.getCFU("blastFurnace").unlocked && gamePage.time.getCFU("blastFurnace").val < 2)) {
                 try {
                     for (var t = 1 ;t < chronoforge.length; t++) {
                         if (!switches['CollectResBReset'] ) {
-                            if (chronoforge[t].model.metadata.name != "ressourceRetrieval" && gamePage.time.getCFU("ressourceRetrieval").unlocked && (gamePage.time.getCFU("ressourceRetrieval").val > 2 ? Math.min(chronoforge[t].model.prices.filter(res => res.name == "timeCrystal")[0].val, gamePage.resPool.get("timeCrystal").value) : gamePage.resPool.get("timeCrystal").value)  > gamePage.timeTab.cfPanel.children[0].children[6].model.prices.filter(res => res.name == "timeCrystal")[0].val * (gamePage.time.getCFU("ressourceRetrieval").val > 2 ? 0.9 : 0.05)  && (gamePage.time.getCFU("ressourceRetrieval").val <= 3 || gamePage.religion.getZU("marker").val > 1) )
+                            if (chronoforge[t].model.metadata.name != "ressourceRetrieval" && gamePage.time.getCFU("ressourceRetrieval").unlocked && (gamePage.time.getCFU("ressourceRetrieval").val > 2 ? Math.min(chronoforge[t].model.prices.filter(res => res.name == "timeCrystal")[0].val, gamePage.resPool.get("timeCrystal").value) : gamePage.resPool.get("timeCrystal").value)  > gamePage.timeTab.cfPanel.children[0].children[6].model.prices.filter(res => res.name == "timeCrystal")[0].val * (gamePage.time.getCFU("ressourceRetrieval").val > 3 ? 0.9 : 0.05)  && (gamePage.time.getCFU("ressourceRetrieval").val <= 3 || gamePage.religion.getZU("marker").val > 1) )
                             {}
                             else if ( (t != 2 && t != 6) && ((( gamePage.calendar.year < 40000  && gamePage.resPool.get("timeCrystal").value < 20000) || chronoforge[t].model.prices.filter(res => res.name == 'timeCrystal')[0].val > chronoforge[6].model.prices.filter(res => res.name == 'timeCrystal')[0].val * (gamePage.resPool.get("timeCrystal").value > (gamePage.resPool.get("unobtainium").maxValue * 0.01) ? 0.1 : 0.01)) || gamePage.time.getCFU("ressourceRetrieval").val <= 3) )
                             {}
@@ -1739,7 +1769,9 @@ function SellSpaceAndReset(){
             let optsell = gamePage.opts.hideSell
             gamePage.opts.hideSell = false
             //sell all space
-            gamePage.tabs[6].planetPanels[4].children[1].model.metadata.on = gamePage.tabs[6].planetPanels[4].children[1].model.metadata.val
+            if (gamePage.tabs[6].planetPanels.length > 3){
+                gamePage.tabs[6].planetPanels[4].children[1].model.metadata.on = gamePage.tabs[6].planetPanels[4].children[1].model.metadata.val
+            }
             for (var z = 0; z < gamePage.tabs[6].planetPanels.length; z++) {
                     var spBuild = gamePage.tabs[6].planetPanels[z].children;
                     try {
