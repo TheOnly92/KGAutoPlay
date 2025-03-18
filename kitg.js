@@ -62,141 +62,241 @@ function autoSwitch(varCheck, varName) {
 
 // Auto Observe Astronomical Events
 function autoObserve() {
-		var checkObserveBtn = document.getElementById("observeBtn");
-		if (typeof(checkObserveBtn) != 'undefined' && checkObserveBtn != null) {
-			document.getElementById('observeBtn').click();
-		}
+  const checkObserveBtn = document.getElementById("observeBtn");
+  if (typeof(checkObserveBtn) != 'undefined' && checkObserveBtn != null) {
+    document.getElementById('observeBtn').click();
+  }
 }
 
 //Auto praise the sun
-function autoPraise(){
+function autoPraise() {
+  // Skip if religion tab is not visible or atheism challenge is active
+  if (!gamePage.religionTab.visible || gamePage.challenges.isActive("atheism")) {
+    return;
+  }
 
-	if (gamePage.religionTab.visible && !gamePage.challenges.isActive("atheism")) {
-	    gamePage.tabs[5].update();
-	    if (gamePage.religion.meta[1].meta[5].val == 1) {
+  // Update religion tab
+  gamePage.tabs[5].update();
 
+  // Get current faith resource
+  const faithResource = gamePage.resPool.get("faith");
+  const isFaithNearMax = faithResource.value >= faithResource.maxValue * 0.99;
 
-            if (gamePage.religion.transcendenceTier > 1 && gamePage.religion.getSolarRevolutionRatio() <= Math.max((gamePage.religion.transcendenceTier + 1) * 0.05, gamePage.getEffect("solarRevolutionLimit"))){
-                gamePage.religion.praise();
-            }
-            else if (gamePage.tabs[5].rUpgradeButtons.filter(res => res.model.resourceIsLimited == false && (!(res.model.name.includes('(complete)')))).length > 0){
-                var btn = gamePage.tabs[5].rUpgradeButtons.filter(res => res.model.resourceIsLimited == false && (!(res.model.name.includes('(complete)'))));
-                for (var rl = 0; rl < btn.length; rl++) {
-                    if (btn[rl].model.enabled && btn[rl].model.visible) {
-                        try {
-                            btn[rl].controller.buyItem(btn[rl].model, {}, function(result) {
-                                if (result) {
-                                    btn[rl].update();
-                                    gamePage.msg('Religion researched: ' + btn[rl].model.name);
-                                }
-                                });
-                        } catch(err) {
-                            console.log(err);
-                        }
-                    }
-                }
-            }
-            if (gamePage.resPool.get("faith").value >= (gamePage.religion.transcendenceTier < 5 ?  Math.min(gamePage.resPool.get("faith").maxValue*0.99, (gamePage.religion.transcendenceTier + 1) * 10000) : gamePage.resPool.get("faith").maxValue*0.99)){
-                if (gamePage.religion.getRU("apocripha").on  && gamePage.religion.getRU("transcendence").on && gamePage.religion.transcendenceTier < 15 && gamePage.religion.getSolarRevolutionRatio() > Math.max((gamePage.religion.transcendenceTier + 1) * 0.05, gamePage.getEffect("solarRevolutionLimit"))) {
-                    gamePage.religion.resetFaith(1.01, false);
-                }
-                else if (gamePage.getEffect("voidResonance") > 0 && gamePage.religion.getRU("apocripha").on  && gamePage.religion.getRU("transcendence").on && (gamePage.religion.faith / gamePage.religion.getApocryphaBonus()) >  gamePage.resPool.get("faith").maxValue * Math.min(gamePage.religion.transcendenceTier, 10, Math.max(gamePage.religion.transcendenceTier * 0.05, gamePage.getEffect("solarRevolutionLimit")))){
-                    gamePage.religion.resetFaith(1.01, false);
-                }
-                else if ( gamePage.religion.getRU("apocripha").on && gamePage.religion.getRU("transcendence").on && (gamePage.religion.faith / gamePage.religion.getApocryphaBonus()) >  gamePage.resPool.get("faith").maxValue * Math.min(gamePage.religion.transcendenceTier, 10, Math.max(gamePage.religion.transcendenceTier * 0.05, gamePage.getEffect("solarRevolutionLimit")))){
-                    gamePage.religion.resetFaith(1.01, false);
-                }
-                else {
-                    gamePage.religion.praise();
-                }
-            }
+  // Handle religion upgrades and transcendence
+  if (gamePage.religion.meta[1].meta[5].val == 1) {
+    handleSolarRevolution(faithResource, isFaithNearMax);
+  } else {
+    handleBasicReligion(faithResource, isFaithNearMax);
+  }
 
-            if (gamePage.religion.getRU("transcendence").on){
-                var needNextLevel = gamePage.religion._getTranscendTotalPrice(gamePage.religion.transcendenceTier + 1) - gamePage.religion._getTranscendTotalPrice(gamePage.religion.transcendenceTier);
-                if (gamePage.religion.faithRatio > needNextLevel) {
+  // Handle cryptotheology if available
+  if (!switches['CollectResBReset'] && gamePage.science.get("cryptotheology").researched) {
+    purchaseCryptotheology();
+  }
 
-                    gamePage.religion.faithRatio -= needNextLevel;
-                    gamePage.religion.tcratio += needNextLevel;
-                    gamePage.religion.transcendenceTier += 1;
+  // Handle pacts
+  handlePacts();
+}
 
-                    self.game.msg($I("religion.transcend.msg.success", [gamePage.religion.transcendenceTier]));
-                }
-            }
-	    } else if ((gamePage.resPool.get("faith").value >= gamePage.resPool.get("faith").maxValue*0.99) && gamePage.tabs[5].rUpgradeButtons.filter(res => res.model.resourceIsLimited == false && (!(res.model.name.includes('(complete)')))).length > 0){
-                var btn = gamePage.tabs[5].rUpgradeButtons.filter(res => res.model.resourceIsLimited == false && (!(res.model.name.includes('(complete)'))));
-                for (var rl = 0; rl < btn.length; rl++) {
-                    if (btn[rl].model.enabled && btn[rl].model.visible) {
-                        try {
-                            btn[rl].controller.buyItem(btn[rl].model, {}, function(result) {
-                                if (result) {
-                                    btn[rl].update();
-                                    gamePage.msg('Religion researched: ' + btn[rl].model.name);
-                                }
-                                });
-                        } catch(err) {
-                            console.log(err);
-                        }
-                    }
-                }
-                if (gamePage.resPool.get("faith").value >= gamePage.resPool.get("faith").maxValue*0.99){
-                    gamePage.religion.praise();
-                }
-        } else if (gamePage.resPool.get("faith").value >= gamePage.resPool.get("faith").maxValue*0.99 || gamePage.tabs[5].rUpgradeButtons.filter(res => res.model.metadata.name == "solarRevolution")[0].model.visible == false){
-              gamePage.religion.praise();
+// Helper function to purchase available religion upgrades
+function purchaseReligionUpgrades() {
+  const availableUpgrades = gamePage.tabs[5].rUpgradeButtons.filter(
+    res => res.model.resourceIsLimited == false && 
+    !res.model.name.includes('(complete)')
+  );
+
+  for (let i = 0; i < availableUpgrades.length; i++) {
+    const upgrade = availableUpgrades[i];
+    if (upgrade.model.enabled && upgrade.model.visible) {
+      try {
+        upgrade.controller.buyItem(upgrade.model, {}, function(result) {
+          if (result) {
+            upgrade.update();
+            gamePage.msg('Religion researched: ' + upgrade.model.name);
+          }
+        });
+      } catch(err) {
+        console.log(err);
+      }
+    }
+  }
+}
+
+// Handle solar revolution related logic
+function handleSolarRevolution(faithResource, isFaithNearMax) {
+  const transcendenceTier = gamePage.religion.transcendenceTier;
+  const solarRevolutionRatio = gamePage.religion.getSolarRevolutionRatio();
+  const solarRevolutionLimit = Math.max((transcendenceTier + 1) * 0.05, gamePage.getEffect("solarRevolutionLimit"));
+
+  // Check if we should praise or purchase upgrades
+  if (transcendenceTier > 1 && solarRevolutionRatio <= solarRevolutionLimit) {
+    gamePage.religion.praise();
+  } else if (gamePage.tabs[5].rUpgradeButtons.filter(res => 
+    res.model.resourceIsLimited == false && 
+    !res.model.name.includes('(complete)')
+  ).length > 0) {
+    purchaseReligionUpgrades();
+  }
+
+  // Handle faith accumulation and transcendence
+  if (isFaithNearMax) {
+    const faithThreshold = transcendenceTier < 5 ? 
+      Math.min(faithResource.maxValue * 0.99, (transcendenceTier + 1) * 10000) : 
+      faithResource.maxValue * 0.99;
+
+    if (faithResource.value >= faithThreshold) {
+      handleFaithReset(transcendenceTier, solarRevolutionRatio, solarRevolutionLimit);
+    }
+  }
+
+  // Check if we can transcend
+  if (gamePage.religion.getRU("transcendence").on) {
+    tryTranscend();
+  }
+}
+
+// Handle faith reset logic
+function handleFaithReset(transcendenceTier, solarRevolutionRatio, solarRevolutionLimit) {
+  const hasApocripha = gamePage.religion.getRU("apocripha").on;
+  const hasTranscendence = gamePage.religion.getRU("transcendence").on;
+  const faithRatio = gamePage.religion.faith / gamePage.religion.getApocryphaBonus();
+  const faithMaxValue = gamePage.resPool.get("faith").maxValue;
+  const hasVoidResonance = gamePage.getEffect("voidResonance") > 0;
+
+  // Complex condition for faith reset
+  const resetThreshold = faithMaxValue * Math.min(
+    transcendenceTier, 
+    10, 
+    Math.max(transcendenceTier * 0.05, solarRevolutionLimit)
+  );
+
+  if (hasApocripha && hasTranscendence) {
+    if (
+      (solarRevolutionRatio > solarRevolutionLimit && transcendenceTier < 15) ||
+      (hasVoidResonance && faithRatio > resetThreshold) ||
+      (faithRatio > resetThreshold)
+    ) {
+      gamePage.religion.resetFaith(1.01, false);
+    } else {
+      gamePage.religion.praise();
+    }
+  } else {
+    gamePage.religion.praise();
+  }
+}
+
+// Try to transcend if possible
+function tryTranscend() {
+  const currentTier = gamePage.religion.transcendenceTier;
+  const needNextLevel = gamePage.religion._getTranscendTotalPrice(currentTier + 1) - 
+    gamePage.religion._getTranscendTotalPrice(currentTier);
+
+  if (gamePage.religion.faithRatio > needNextLevel) {
+    gamePage.religion.transend();
+  }
+}
+
+// Handle basic religion before solar revolution
+function handleBasicReligion(faithResource, isFaithNearMax) {
+  const hasSolarRevolution = gamePage.tabs[5].rUpgradeButtons.filter(
+    res => res.model.metadata.name == "solarRevolution"
+  )[0].model.visible == false;
+
+  if (isFaithNearMax && gamePage.tabs[5].rUpgradeButtons.filter(
+    res => res.model.resourceIsLimited == false && 
+    !res.model.name.includes('(complete)')
+  ).length > 0) {
+    purchaseReligionUpgrades();
+
+    // Praise if still near max faith
+    if (faithResource.value >= faithResource.maxValue * 0.99) {
+      gamePage.religion.praise();
+    }
+  } else if (isFaithNearMax || hasSolarRevolution) {
+    gamePage.religion.praise();
+  }
+}
+
+// Purchase available cryptotheology upgrades
+function purchaseCryptotheology() {
+  const cryptoButtons = gamePage.tabs[5].ctPanel.children[0].children;
+
+  for (let i = 0; i < cryptoButtons.length; i++) {
+    const upgrade = cryptoButtons[i];
+    if (upgrade.model.enabled && upgrade.model.visible) {
+      try {
+        upgrade.controller.buyItem(upgrade.model, {}, function(result) {
+          if (result) {
+            upgrade.update();
+            gamePage.msg('Religion Cryptotheology researched: ' + upgrade.model.name);
+          }
+        });
+      } catch(err) {
+        console.log(err);
+      }
+    }
+  }
+}
+
+// Handle pacts
+function handlePacts() {
+  // Handle Pact of Cleansing
+  if (gamePage.science.getPolicy("siphoning").researched && 
+    gamePage.religion.getPact("pactOfCleansing").unlocked && 
+    gamePage.getEffect("pactsAvailable") > 0) {
+
+    if (gamePage.resPool.get("relic").value > 100 && 
+      gamePage.resPool.get("necrocorn").value > 10 && 
+      (gamePage.religion.getCorruptionPerTick() * (1 + gamePage.timeAccelerationRatio())) > 0.001 && 
+      gamePage.diplomacy.get("leviathans").energy >= gamePage.diplomacy.getMarkerCap()) {
+
+      const cleansing = gamePage.tabs[5].ptPanel.children[0].children.filter(
+        res => res.model.metadata && 
+        res.model.metadata.unlocked && 
+        res.id == "pactOfCleansing" && 
+        res.model.enabled
+      );
+
+      for (let i = 0; i < cleansing.length; i++) {
+        const pact = cleansing[i];
+        if (pact.model.enabled && pact.model.visible) {
+          try {
+            pact.controller.buyItem(pact.model, {}, function(result) {
+              if (result) {
+                pact.update();
+                gamePage.msg('Religion Pact accepted: ' + pact.model.name);
+              }
+            });
+          } catch(err) {
+            console.log(err);
+          }
         }
+      }
+    }
+  }
 
-        if (!switches['CollectResBReset']) {
-            if (gamePage.science.get("cryptotheology").researched){
-                var btn = gamePage.tabs[5].ctPanel.children[0].children;
-                for (var cr = 0; cr < btn.length; cr++) {
-                    if (btn[cr].model.enabled && btn[cr].model.visible) {
-                        try {
-                            btn[cr].controller.buyItem(btn[cr].model, {}, function(result) {
-                                if (result) {
-                                    btn[cr].update();
-                                    gamePage.msg('Religion Cryptotheology researched: ' + btn[cr].model.name);
-                                }
-                                });
-                        } catch(err) {
-                            console.log(err);
-                        }
-                    }
-                }
-            }
+  // Handle Pay Debt
+  if (gamePage.religion.getPact("payDebt").unlocked && 
+    gamePage.resPool.get("necrocorn").value > gamePage.religion.getPact("payDebt").prices[0].val) {
+
+    const payDebt = gamePage.tabs[5].ptPanel.children[0].children.filter(
+      res => res.model.metadata && 
+      res.model.metadata.unlocked && 
+      res.id == "payDebt" && 
+      res.model.enabled
+    )[0];
+
+    try {
+      payDebt.controller.buyItem(payDebt.model, {}, function(result) {
+        if (result) {
+          payDebt.update();
+          gamePage.msg('Religion : ' + payDebt.model.name);
         }
-        if (gamePage.science.getPolicy("siphoning").researched && gamePage.religion.getPact("pactOfCleansing").unlocked && gamePage.getEffect("pactsAvailable") > 0 ){
-            if (gamePage.resPool.get("relic").value > 100 && gamePage.resPool.get("necrocorn").value > 10 && (gamePage.religion.getCorruptionPerTick() * (1 + gamePage.timeAccelerationRatio())) > 0.001  && gamePage.diplomacy.get("leviathans").energy >= gamePage.diplomacy.getMarkerCap())  {
-                var btn = gamePage.tabs[5].ptPanel.children[0].children.filter(res => res.model.metadata && res.model.metadata.unlocked && res.id == "pactOfCleansing" && res.model.enabled)
-                for (var cr = 0; cr < btn.length; cr++) {
-                    if (btn[cr].model.enabled && btn[cr].model.visible) {
-                        try {
-                            btn[cr].controller.buyItem(btn[cr].model, {}, function(result) {
-                                if (result) {
-                                    btn[cr].update();
-                                    gamePage.msg('Religion Pact accepted: ' + btn[cr].model.name);
-                                }
-                                });
-                        } catch(err) {
-                            console.log(err);
-                        }
-                    }
-                }
-            }
-        }
-        if (gamePage.religion.getPact("payDebt").unlocked && gamePage.resPool.get("necrocorn").value > gamePage.religion.getPact("payDebt").prices[0].val){
-            var btn = gamePage.tabs[5].ptPanel.children[0].children.filter(res => res.model.metadata && res.model.metadata.unlocked && res.id == "payDebt" && res.model.enabled)[0]
-            try {
-                    btn.controller.buyItem(btn.model, {}, function(result) {
-                        if (result) {
-                            btn.update();
-                            gamePage.msg('Religion : ' + btn.model.name);
-                        }
-                        });
-                } catch(err) {
-                    console.log(err);
-                }
-        }
-	}
+      });
+    } catch(err) {
+      console.log(err);
+    }
+  }
 }
 
 var golden_Buildings = ["temple","tradepost"];
