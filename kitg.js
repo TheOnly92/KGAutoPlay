@@ -1,82 +1,9 @@
 // These will allow quick selection of the buildings which consume energy
 (function(s){var w,f={},o=window,l=console,m=Math,z='postMessage',x='HackTimer.js by turuslan: ',v='Initialisation failed',p=0,r='hasOwnProperty',y=[].slice,b=o.Worker;function d(){do{p=0x7FFFFFFF>p?p+1:0}while(f[r](p));return p}if(!/MSIE 10/i.test(navigator.userAgent)){try{s=o.URL.createObjectURL(new Blob(["var f={},p=postMessage,r='hasOwnProperty';onmessage=function(e){var d=e.data,i=d.i,t=d[r]('t')?d.t:0;switch(d.n){case'a':f[i]=setInterval(function(){p(i)},t);break;case'b':if(f[r](i)){clearInterval(f[i]);delete f[i]}break;case'c':f[i]=setTimeout(function(){p(i);if(f[r](i))delete f[i]},t);break;case'd':if(f[r](i)){clearTimeout(f[i]);delete f[i]}break}}"]))}catch(e){}}if(typeof(b)!=='undefined'){try{w=new b(s);o.setInterval=function(c,t){var i=d();f[i]={c:c,p:y.call(arguments,2)};w[z]({n:'a',i:i,t:t});return i};o.clearInterval=function(i){if(f[r](i))delete f[i],w[z]({n:'b',i:i})};o.setTimeout=function(c,t){var i=d();f[i]={c:c,p:y.call(arguments,2),t:!0};w[z]({n:'c',i:i,t:t});return i};o.clearTimeout=function(i){if(f[r](i))delete f[i],w[z]({n:'d',i:i})};w.onmessage=function(e){var i=e.data,c,n;if(f[r](i)){n=f[i];c=n.c;if(n[r]('t'))delete f[i]}if(typeof(c)=='string')try{c=new Function(c)}catch(k){l.log(x+'Error parsing callback code string: ',k)}if(typeof(c)=='function')c.apply(o,n.p)};w.onerror=function(e){l.log(e)};l.log(x+'Initialisation succeeded')}catch(e){l.log(x+v);l.error(e)}}else l.log(x+v+' - HTML5 Web Worker is not supported')})('HackTimerWorker.min.js');
 
-var bldSmelter = gamePage.bld.buildingsData[15];
-var bldBioLab = gamePage.bld.buildingsData[9];
-var bldOilWell = gamePage.bld.buildingsData[20];
-var bldFactory = gamePage.bld.buildingsData[22];
-var bldCalciner = gamePage.bld.buildingsData[16];
-var bldAccelerator = gamePage.bld.buildingsData[24];
-var bldWarehouse = gamePage.bld.buildingsData[11];
-
-
-var spcContChamber = gamePage.space.meta[5].meta[1];
-var spcMoonBase = gamePage.space.meta[2].meta[1];
-var spcEntangler = gamePage.space.meta[10].meta[0];
-var spcSpaceStation = gamePage.space.meta[1].meta[2];
-var spcLunarOutpost = gamePage.space.meta[2].meta[0];
-var spcOrbitalArray = gamePage.space.meta[4].meta[1];
-
- // These are the assorted variables
-var proVar = gamePage.resPool.energyProd;
-var conVar = gamePage.resPool.energyCons;
-var FreeEnergy = 0;
 var deadScript = "Script is dead";
-var Iinc = 0;
-var IincKAssign = 0;
-var tick = 0;
-var tick_inactive = 0;
-var LeviTradeCnt = 0;
-var embRefreshCnt = 0;
-var postApocalypse_is_competed = true;
 var GlobalMsg = {'craft':'','tech':'','relicStation':'','solarRevolution':'','ressourceRetrieval':'','chronosphere':'', 'science':''};
-var science_labels = ['astronomy', 'theology', 'voidSpace', 'paradoxalKnowledge', 'navigation', 'architecture', 'physics', 'chemistry', 'archeology', 'electricity', 'biology'];
-var sciencePriority = [null,[]]
-var golden_Buildings = ["temple","tradepost"];
 var switches = {"Energy Control":true, "Iron Will":false, "CollectResBReset":false}
-var ActualTabs = Object.values(gamePage.tabs.filter(tab => tab.tabName != "Stats"));
-var f = (a = 1, {x: c} ={ x: a / 10000}) => c;
-function calc_sell_rate(res) {
-                      let obj = {"name": res.name}
-                      if (craftPriority[0].length > 0 && gamePage.bld.getPrices(craftPriority[0]).filter(rest => rest.name == res.name).length > 0 && gamePage.bld.getPrices(craftPriority[0]).filter(rest => rest.name == res.name)[0].val > gamePage.resPool.get(res.name).value){
-                        obj.ratio = 0
-                      }
-                      else if (sciencePriority[0] != null && sciencePriority[1].filter(rest => rest.name == res.name).length > 0 && sciencePriority[1].filter(rest => rest.name == res.name)[0].val > gamePage.resPool.get(res.name).value){
-                        obj.ratio = -1
-                      }
-                      else if ( gamePage.resPool.get(res.name).maxValue != 0) {
-                          obj.ratio = gamePage.resPool.get(res.name).value / gamePage.resPool.get(res.name).maxValue * gamePage.resPool.get(res.name).value
-                      }
-                      else {
-                        obj.ratio =  0.1 * gamePage.resPool.get(res.name).value
-                      }
-                     return obj;
-                }
-
-var upgrades_craft = [
-[gamePage.workshop.get("printingPress"),[["gear", 45*1.2]]],
-[gamePage.workshop.get("fluidizedReactors"),[["alloy",200*1.2]]],
-[gamePage.workshop.get("oxidation"),[["steel",5000*1.2]]],
-[gamePage.workshop.get("miningDrill"),[["steel",750*1.2]]],
-[gamePage.workshop.get("steelPlants"),[["gear",750*1.2]]],
-[gamePage.workshop.get("rotaryKiln"),[["gear",500*1.2]]]
-];
-
-var policy_lst_all = [
-"liberty", "authocracy", "communism",
-"socialism", "diplomacy", "zebraRelationsAppeasement",
-"knowledgeSharing", "stoicism", "mysticism",
-"clearCutting", "fullIndustrialization", "militarizeSpace",
-"necrocracy", "expansionism", "frugality", "siphoning", "spiderRelationsGeologists", "lizardRelationsDiplomats",
-"sharkRelationsMerchants", "griffinRelationsMachinists", "dragonRelationsPhysicists", "nagaRelationsCultists"
-];
-var policy_lst_post_apocalypse = [
-"liberty", "authocracy", "communism",
-"socialism", "diplomacy", "zebraRelationsAppeasement",
-"knowledgeSharing", "stoicism", "mysticism",
-"environmentalism", "militarizeSpace",
-"necrocracy", "expansionism", "frugality", "conservation", "siphoning"
-];
 
 var htmlMenuAddition = '<div id="farRightColumn" class="column">' +
 
@@ -140,7 +67,6 @@ function autoObserve() {
 			document.getElementById('observeBtn').click();
 		}
 }
-
 
 //Auto praise the sun
 function autoPraise(){
@@ -273,6 +199,7 @@ function autoPraise(){
 	}
 }
 
+var golden_Buildings = ["temple","tradepost"];
 
 // Build buildings automatically
 function autoBuild() {
@@ -452,6 +379,26 @@ function autoSpace() {
 	}
 }
 
+var embRefreshCnt = 0;
+var sciencePriority = [null,[]]
+
+function calc_sell_rate(res) {
+                      let obj = {"name": res.name}
+                      if (craftPriority[0].length > 0 && gamePage.bld.getPrices(craftPriority[0]).filter(rest => rest.name == res.name).length > 0 && gamePage.bld.getPrices(craftPriority[0]).filter(rest => rest.name == res.name)[0].val > gamePage.resPool.get(res.name).value){
+                        obj.ratio = 0
+                      }
+                      else if (sciencePriority[0] != null && sciencePriority[1].filter(rest => rest.name == res.name).length > 0 && sciencePriority[1].filter(rest => rest.name == res.name)[0].val > gamePage.resPool.get(res.name).value){
+                        obj.ratio = -1
+                      }
+                      else if ( gamePage.resPool.get(res.name).maxValue != 0) {
+                          obj.ratio = gamePage.resPool.get(res.name).value / gamePage.resPool.get(res.name).maxValue * gamePage.resPool.get(res.name).value
+                      }
+                      else {
+                        obj.ratio =  0.1 * gamePage.resPool.get(res.name).value
+                      }
+                     return obj;
+                }
+
 // Trade automatically
 function autoTrade() {
         GlobalMsg["ressourceRetrieval"] = ''
@@ -624,6 +571,15 @@ var cntcrafts = 0
 var reslist = {}
 var reslist2 = []
 var cnt = 0
+
+var upgrades_craft = [
+[gamePage.workshop.get("printingPress"),[["gear", 45*1.2]]],
+[gamePage.workshop.get("fluidizedReactors"),[["alloy",200*1.2]]],
+[gamePage.workshop.get("oxidation"),[["steel",5000*1.2]]],
+[gamePage.workshop.get("miningDrill"),[["steel",750*1.2]]],
+[gamePage.workshop.get("steelPlants"),[["gear",750*1.2]]],
+[gamePage.workshop.get("rotaryKiln"),[["gear",500*1.2]]]
+];
 
 function autoCraft2() {
 
@@ -962,6 +918,22 @@ function autoCraft2() {
 //	    }
 }
 
+var science_labels = ['astronomy', 'theology', 'voidSpace', 'paradoxalKnowledge', 'navigation', 'architecture', 'physics', 'chemistry', 'archeology', 'electricity', 'biology'];
+var policy_lst_all = [
+"liberty", "authocracy", "communism",
+"socialism", "diplomacy", "zebraRelationsAppeasement",
+"knowledgeSharing", "stoicism", "mysticism",
+"clearCutting", "fullIndustrialization", "militarizeSpace",
+"necrocracy", "expansionism", "frugality", "siphoning", "spiderRelationsGeologists", "lizardRelationsDiplomats",
+"sharkRelationsMerchants", "griffinRelationsMachinists", "dragonRelationsPhysicists", "nagaRelationsCultists"
+];
+var policy_lst_post_apocalypse = [
+"liberty", "authocracy", "communism",
+"socialism", "diplomacy", "zebraRelationsAppeasement",
+"knowledgeSharing", "stoicism", "mysticism",
+"environmentalism", "militarizeSpace",
+"necrocracy", "expansionism", "frugality", "conservation", "siphoning"
+];
 
 // Auto Research
 function autoResearch() {
@@ -1206,6 +1178,7 @@ function autozig() {
     }
 }
 
+var IincKAssign = 0;
 
 // Auto assign new kittens to selected job
 function autoAssign() {
@@ -1287,6 +1260,25 @@ function autoAssign() {
         }
 }
 
+var bldSmelter = gamePage.bld.buildingsData[15];
+var bldBioLab = gamePage.bld.buildingsData[9];
+var bldOilWell = gamePage.bld.buildingsData[20];
+var bldFactory = gamePage.bld.buildingsData[22];
+var bldCalciner = gamePage.bld.buildingsData[16];
+var bldAccelerator = gamePage.bld.buildingsData[24];
+var bldWarehouse = gamePage.bld.buildingsData[11];
+
+var spcContChamber = gamePage.space.meta[5].meta[1];
+var spcMoonBase = gamePage.space.meta[2].meta[1];
+var spcEntangler = gamePage.space.meta[10].meta[0];
+var spcSpaceStation = gamePage.space.meta[1].meta[2];
+var spcLunarOutpost = gamePage.space.meta[2].meta[0];
+var spcOrbitalArray = gamePage.space.meta[4].meta[1];
+
+ // These are the assorted variables
+var proVar = gamePage.resPool.energyProd;
+var conVar = gamePage.resPool.energyCons;
+var FreeEnergy = 0;
 // Control Energy Consumption
 function energyControl() {
   if (switches["Energy Control"]){
@@ -1415,6 +1407,8 @@ function upgradeByModel(target){
     target.controller.game.upgrade(metadataRaw.upgrades);
     target.controller.game.render();
 }
+
+var postApocalypse_is_competed = true;
 
 function UpgradeBuildings() {
     if (gamePage.diplomacy.hasUnlockedRaces()){
@@ -1737,7 +1731,7 @@ function Service(){
     }
 }
 
-
+var ActualTabs = Object.values(gamePage.tabs.filter(tab => tab.tabName != "Stats"));
 
 function RenderNewTabs(){
     if(gamePage.tabs.filter(tab => tab.tabName != "Stats"  && !ActualTabs.includes(tab)).length > 0) {
@@ -1838,6 +1832,8 @@ gamePage.tabs.filter(tab => tab.tabId != "Stats" ).forEach(tab => tab.render());
 
 // This function keeps track of the game's ticks and uses math to execute these functions at set times relative to the game.
 gamePage.ui.render();
+
+var tick = 0;
 
 var runAllAutomation = setInterval(function() {
     if (tick != gamePage.timer.ticksTotal) {
