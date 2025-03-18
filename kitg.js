@@ -540,233 +540,544 @@ function buyBuilding(building, controller, model) {
 
 // Build space stuff automatically
 function autoSpace() {
-    if (gamePage.spaceTab.visible) {
-        gamePage.tabs[6].update();
-        // Build space buildings
-        for (var z = 0; z < gamePage.tabs[6].planetPanels.length; z++) {
-                var spBuild = gamePage.tabs[6].planetPanels[z].children;
-                try {
-                    for (var sp = 0 ;sp < spBuild.length; sp++) {
-                        if (spBuild[sp].model.metadata.unlocked) {
-                            if (!switches['CollectResBReset'] || spBuild[sp].model.prices.filter(res => res.name == 'relic' || res.name == 'timeCrystal' || res.name == 'void').length == 0) {
-                                if (gamePage.workshop.get("relicStation").unlocked && !gamePage.workshop.get("relicStation").researched  && spBuild[sp].model.prices.filter(res => res.name == 'antimatter').length > 0 && (!gamePage.challenges.isActive("energy")  && gamePage.resPool.get("antimatter").value < gamePage.resPool.get("antimatter").maxValue )){
-                                    {}
-                                }
-                                else if (!gamePage.science.get('voidSpace').researched &&  ["hydroponics", "moonBase", "sunlifter", "cryostation", "heatsink"].includes(spBuild[sp].model.metadata.name) && (spBuild[sp].model.prices.filter(res => res.name == "eludium").length == 0 ||  spBuild[sp].model.prices.filter(res => res.name == "eludium")[0].val > 500) &&  gamePage.resPool.get("unobtainium").value < gamePage.resPool.get("unobtainium").maxValue * 0.5 ){
-                                    {}
-                                }
-                                else if ( ["moonBase"].includes(spBuild[sp].model.metadata.name)  &&  gamePage.resPool.get("unobtainium").value < gamePage.resPool.get("unobtainium").maxValue * 0.5  && spBuild[sp].model.prices.filter(res => res.name == "unobtainium")[0].val > gamePage.resPool.get("eludium").value){
-                                    {}
-                                }
-                                else if ( spBuild[sp].model.metadata.name == "hydroponics" && spBuild[sp].model.prices.filter(res => res.name == "unobtainium")[0].val > gamePage.resPool.get("eludium").value){
-                                    {}
-                                }
-                                else if (gamePage.ironWill){
-                                    if(!spBuild[sp].model.metadata.effects.maxKittens){
-                                        spBuild[sp].controller.buyItem(spBuild[sp].model, {}, function(result) {
-                                        if (result) {
-                                            spBuild[sp].update();
-                                            gamePage.msg('Build in Space: ' + spBuild[sp].model.name);
-                                            return;
-                                        }
-                                        });
-                                    }
-                                }else{
-                                    spBuild[sp].controller.buyItem(spBuild[sp].model, {}, function(result) {
-                                    if (result) {
-                                        spBuild[sp].update();
-                                        gamePage.msg('Build in Space: ' + spBuild[sp].model.name);
-                                        return;
-                                    }
-                                    });
-                                }
-                            }
-                        }
-                    }
-                } catch(err) {
-                console.log(err);
-                }
-        }
-        // Build space programs
-        var spcProg = gamePage.tabs[6].GCPanel.children;
-        for (var sp = 0; sp < spcProg.length; sp++) {
-            if (spcProg[sp].model.metadata.unlocked && spcProg[sp].model.on == 0) {
-                try {
-                    spcProg[sp].controller.buyItem(spcProg[sp].model, {}, function(result) {
-                        if (result) {
-                            spcProg[sp].update();
-                            gamePage.msg('Research Space program: ' + spcProg[sp].model.name );
-                            return;
-                        }
-                        });
-                } catch(err) {
-                console.log(err);
-                }
-            }
-        }
-	}
+  if (!gamePage.spaceTab.visible) {
+    return; // Exit early if space tab isn't visible
+  }
+
+  gamePage.tabs[6].update();
+
+  // Build space buildings
+  buildSpaceBuildings();
+
+  // Build space programs
+  buildSpacePrograms();
 }
 
-var embRefreshCnt = 0;
-var sciencePriority = [null,[]]
+/**
+ * Attempts to build available space buildings
+ */
+function buildSpaceBuildings() {
+  for (let panelIndex = 0; panelIndex < gamePage.tabs[6].planetPanels.length; panelIndex++) {
+    try {
+      const spaceBuildings = gamePage.tabs[6].planetPanels[panelIndex].children;
 
-function calc_sell_rate(res) {
-                      let obj = {"name": res.name}
-                      if (craftPriority[0].length > 0 && gamePage.bld.getPrices(craftPriority[0]).filter(rest => rest.name == res.name).length > 0 && gamePage.bld.getPrices(craftPriority[0]).filter(rest => rest.name == res.name)[0].val > gamePage.resPool.get(res.name).value){
-                        obj.ratio = 0
-                      }
-                      else if (sciencePriority[0] != null && sciencePriority[1].filter(rest => rest.name == res.name).length > 0 && sciencePriority[1].filter(rest => rest.name == res.name)[0].val > gamePage.resPool.get(res.name).value){
-                        obj.ratio = -1
-                      }
-                      else if ( gamePage.resPool.get(res.name).maxValue != 0) {
-                          obj.ratio = gamePage.resPool.get(res.name).value / gamePage.resPool.get(res.name).maxValue * gamePage.resPool.get(res.name).value
-                      }
-                      else {
-                        obj.ratio =  0.1 * gamePage.resPool.get(res.name).value
-                      }
-                     return obj;
-                }
+      for (let buildingIndex = 0; buildingIndex < spaceBuildings.length; buildingIndex++) {
+        const building = spaceBuildings[buildingIndex];
 
-// Trade automatically
+        if (!building.model.metadata.unlocked) {
+          continue;
+        }
+
+        if (shouldSkipBuilding(building)) {
+          continue;
+        }
+
+        // Skip buildings that provide kittens during Iron Will mode
+        if (gamePage.ironWill && building.model.metadata.effects.maxKittens) {
+          continue;
+        }
+
+        // Buy the building
+        building.controller.buyItem(building.model, {}, function(result) {
+          if (result) {
+            building.update();
+            gamePage.msg('Build in Space: ' + building.model.name);
+          }
+        });
+      }
+    } catch(err) {
+      console.log(err);
+    }
+  }
+}
+
+/**
+ * Determines if a building should be skipped based on resource constraints
+ */
+function shouldSkipBuilding(building) {
+  const model = building.model;
+  const buildingName = model.metadata.name;
+  const prices = model.prices;
+
+  // Skip buildings that require relic, time crystal, or void if CollectResBReset switch is on
+  if (switches['CollectResBReset'] && 
+    prices.some(res => ['relic', 'timeCrystal', 'void'].includes(res.name))) {
+    return true;
+  }
+
+  // Skip antimatter buildings if relic station is unlocked but not researched
+  // and we don't have enough antimatter during non-energy challenges
+  if (gamePage.workshop.get("relicStation").unlocked && 
+    !gamePage.workshop.get("relicStation").researched && 
+    prices.some(res => res.name === 'antimatter') && 
+    !gamePage.challenges.isActive("energy") && 
+    gamePage.resPool.get("antimatter").value < gamePage.resPool.get("antimatter").maxValue) {
+    return true;
+  }
+
+  // Skip certain space buildings before void space is researched when unobtainium is low
+  const criticalBuildings = ["hydroponics", "moonBase", "sunlifter", "cryostation", "heatsink"];
+  if (!gamePage.science.get('voidSpace').researched && 
+    criticalBuildings.includes(buildingName)) {
+
+    const eludiumPrice = prices.find(res => res.name === "eludium");
+    const unobtainiumResource = gamePage.resPool.get("unobtainium");
+
+    if ((eludiumPrice === undefined || eludiumPrice.val > 500) && 
+      unobtainiumResource.value < unobtainiumResource.maxValue * 0.5) {
+      return true;
+    }
+  }
+
+  // Skip moonBase when unobtainium is low and cost exceeds available eludium
+  if (buildingName === "moonBase") {
+    const unobtainiumPrice = prices.find(res => res.name === "unobtainium");
+    const unobtainiumResource = gamePage.resPool.get("unobtainium");
+    const eludiumResource = gamePage.resPool.get("eludium");
+
+    if (unobtainiumResource.value < unobtainiumResource.maxValue * 0.5 && 
+      unobtainiumPrice && unobtainiumPrice.val > eludiumResource.value) {
+      return true;
+    }
+  }
+
+  // Skip hydroponics when unobtainium cost exceeds available eludium
+  if (buildingName === "hydroponics") {
+    const unobtainiumPrice = prices.find(res => res.name === "unobtainium");
+    const eludiumResource = gamePage.resPool.get("eludium");
+
+    if (unobtainiumPrice && unobtainiumPrice.val > eludiumResource.value) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Attempts to research available space programs
+ */
+function buildSpacePrograms() {
+  const spacePrograms = gamePage.tabs[6].GCPanel.children;
+
+  for (let programIndex = 0; programIndex < spacePrograms.length; programIndex++) {
+    const program = spacePrograms[programIndex];
+
+    if (program.model.metadata.unlocked && program.model.on === 0) {
+      try {
+        program.controller.buyItem(program.model, {}, function(result) {
+          if (result) {
+            program.update();
+            gamePage.msg('Research Space program: ' + program.model.name);
+          }
+        });
+      } catch(err) {
+        console.log(err);
+      }
+    }
+  }
+}
+
+let embRefreshCnt = 0;
+let sciencePriority = [null, []];
+
+/**
+ * Calculate the selling ratio for a resource
+ */
+function calcSellRatio(res) {
+  const resource = gamePage.resPool.get(res.name);
+  let ratio = 0;
+
+  // Check building priority
+  if (craftPriority[0].length > 0) {
+    const buildingPrices = gamePage.bld.getPrices(craftPriority[0]);
+    const requiredResource = buildingPrices.find(r => r.name === res.name);
+
+    if (requiredResource && requiredResource.val > resource.value) {
+      return { name: res.name, ratio: 0 };
+    }
+  }
+
+  // Check science priority
+  if (sciencePriority[0] !== null) {
+    const scienceResource = sciencePriority[1].find(r => r.name === res.name);
+
+    if (scienceResource && scienceResource.val > resource.value) {
+      return { name: res.name, ratio: -1 };
+    }
+  }
+
+  // Calculate ratio based on resource max value
+  if (resource.maxValue !== 0) {
+    ratio = resource.value / resource.maxValue * resource.value;
+  } else {
+    ratio = 0.1 * resource.value;
+  }
+
+  return { name: res.name, ratio };
+}
+
+/**
+ * Check if time crystal retrieval is possible and set message
+ */
+function checkTimeRetrieval() {
+  const timeCrystals = gamePage.resPool.get("timeCrystal");
+  const cfPanel = gamePage.timeTab.cfPanel.children[0].children[6].model;
+
+  if (!gamePage.time.meta[0].meta[5].unlocked) return false;
+
+  const requiredCrystals = cfPanel.prices.find(res => res.name === "timeCrystal").val;
+  const currentLevel = cfPanel.metadata.val;
+  const threshold = currentLevel > 3 ? 0.9 : 0.05;
+
+  if (timeCrystals.value > requiredCrystals * threshold) {
+    const percentage = Math.round((timeCrystals.value / requiredCrystals) * 100);
+    GlobalMsg["ressourceRetrieval"] = `${cfPanel.metadata.label}(${currentLevel + 1}) ${percentage}%`;
+    return true;
+  }
+
+  GlobalMsg["ressourceRetrieval"] = '';
+  return false;
+}
+
+/**
+ * Trade with Leviathans based on current game state
+ */
+function tradeWithLeviathans() {
+  const leviathans = gamePage.diplomacy.get('leviathans');
+  if (!leviathans.unlocked || leviathans.duration === 0) return;
+
+  const unobtainium = gamePage.resPool.get('unobtainium');
+  const timeCrystal = gamePage.resPool.get('timeCrystal');
+  const eludium = gamePage.resPool.get('eludium');
+
+  // Handle time crystal trades
+  if (gamePage.time.meta[0].meta[5].val === 0 && 
+    timeCrystal.value < (gamePage.bld.getBuildingExt('chronosphere').meta.val < 10 ? 
+      Chronosphere10SummPrices()["timeCrystal"] : 6)) {
+    if (unobtainium.value > 5000) {
+      gamePage.diplomacy.tradeMultiple(game.diplomacy.get("leviathans"), 1);
+    }
+    return;
+  }
+
+  // Check for unobtainium surplus
+  if (unobtainium.value <= 5000) return;
+
+  // Calculate trade amount
+  const tradeAmount = Math.min(
+    gamePage.diplomacy.getMaxTradeAmt(leviathans),
+    Math.max(Math.floor(unobtainium.value / 5000), 1)
+  );
+
+  // Handle different trading strategies
+  if (checkTimeRetrieval()) {
+    // Trade for time crystals if close to next resource retrieval
+    gamePage.diplomacy.tradeAll(leviathans);
+  } else if (!switches['CollectResBReset'] && 
+    gamePage.space.getBuilding('sunlifter').unlocked && 
+    timeCrystal.value >= Chronosphere10SummPrices()['timeCrystal'] && 
+    gamePage.space.meta[5].meta[0].val < 30) {
+    // Maximize sunlifter level (best effort)
+    // No trade action needed
+  } else if (switches['CollectResBReset'] && timeCrystal.value < 1500) {
+    gamePage.diplomacy.tradeMultiple(leviathans, tradeAmount);
+  } else if (!switches['CollectResBReset'] && 
+    gamePage.bld.getBuildingExt('chronosphere').meta.val >= 10 && 
+    timeCrystal.value <= eludium.value / 5) {
+    gamePage.diplomacy.tradeMultiple(leviathans, tradeAmount);
+  }
+
+  // Handle feeding elders
+  handleFeedingElders();
+}
+
+/**
+ * Handle feeding elders with necrocorns
+ */
+function handleFeedingElders() {
+  const leviathans = gamePage.diplomacy.get("leviathans");
+  const necrocorn = gamePage.resPool.get("necrocorn");
+  const marker = gamePage.religion.getZU("marker");
+
+  if (leviathans.energy >= gamePage.diplomacy.getMarkerCap()) return;
+
+  const necrocornsNeeded = gamePage.religion.meta[0].meta[8].val > 0 
+    ? (leviathans.energy + 1) * 10 
+    : Math.ceil(leviathans.energy / 10) + 1;
+
+  if (necrocorn.value > necrocornsNeeded && 
+    leviathans.energy < (marker.val * 5 + 5)) {
+    gamePage.diplomacy.feedElders();
+  }
+}
+
+/**
+ * Handle trading with Dragons
+ */
+function tradeWithDragons() {
+  const dragons = gamePage.diplomacy.get('dragons');
+  if (!dragons.unlocked) return;
+
+  const titanium = gamePage.resPool.get('titanium');
+  const uranium = gamePage.resPool.get('uranium');
+  const gold = gamePage.resPool.get('gold');
+  const paragon = gamePage.resPool.get('paragon');
+
+  if ((titanium.value > 5000 || gamePage.bld.getBuildingExt('reactor').meta.val > 0) && 
+    uranium.value < Math.min(paragon.value, 100) && 
+    gold.value < gold.maxValue * 0.95) {
+    gamePage.diplomacy.tradeAll(dragons, 1);
+  }
+}
+
+/**
+ * Handle building embassies
+ */
+function buildEmbassies() {
+  const culture = gamePage.resPool.get('culture');
+
+  // Skip if not enough culture or in pacifism challenge
+  if ((culture.value < 10000 && culture.value < culture.maxValue) && 
+    !gamePage.challenges.isActive("pacifism")) {
+    return;
+  }
+
+  // Refresh embassy panel occasionally
+  embRefreshCnt += 1;
+  if (embRefreshCnt >= 10) {
+    gamePage.diplomacyTab.render();
+    embRefreshCnt = 0;
+  }
+
+  // Find embassy buttons for races with unlocked trading
+  const embassyButtons = gamePage.diplomacyTab.racePanels.filter(emb => 
+    emb.race.unlocked && 
+    emb.embassyButton !== null && 
+    !emb.embassyButton.model.resourceIsLimited
+  );
+
+  if (embassyButtons.length > 0) {
+    // Sort by embassy level and build the lowest one
+    const lowestEmbassyRace = embassyButtons.sort((a, b) => 
+      a.race.embassyLevel - b.race.embassyLevel
+    )[0];
+
+    lowestEmbassyRace.embassyButton.controller.buyItem(
+      lowestEmbassyRace.embassyButton.model, 
+      {}, 
+      result => {
+        if (result) {
+          lowestEmbassyRace.embassyButton.update();
+        }
+      }
+    );
+  }
+}
+
+/**
+ * Handle blackcoin speculation
+ */
+function handleBlackcoinSpeculation() {
+  const leviathans = gamePage.diplomacy.get('leviathans');
+  if (!leviathans.unlocked || leviathans.duration === 0) return;
+
+  const blackchain = gamePage.science.get("blackchain");
+  const blackcoin = gamePage.resPool.get("blackcoin");
+  const relic = gamePage.resPool.get("relic");
+
+  // Skip if blackchain not researched and no blackcoins
+  if (!blackchain.researched && blackcoin.value <= 0) return;
+
+  // Sell blackcoins at high price
+  if (blackcoin.value > 0 && gamePage.calendar.cryptoPrice > 1090) {
+    gamePage.diplomacy.sellBcoin();
+  }
+
+  // Buy blackcoins at low price if not saving for reset
+  if (!switches['CollectResBReset'] && 
+    relic.value > (1000 + blackcoin.value * 1000) && 
+    gamePage.calendar.cryptoPrice < 1000) {
+    gamePage.diplomacy.buyBcoin();
+  }
+}
+
+/**
+ * Determine if trading should be active based on game conditions
+ * @return {Boolean} Whether trading should be active
+ */
+function shouldTradeBeActive() {
+  const gold = gamePage.resPool.get('gold');
+
+  // Solar Revolution is active
+  if (gamePage.religion.getRU('solarRevolution').val === 1) return true;
+
+  // Atheism or Pacifism challenge with sufficient gold or mint
+  if ((gamePage.challenges.isActive("atheism") || gamePage.challenges.isActive("pacifism")) && 
+    (gold.value > 550 || gamePage.bld.getBuildingExt('mint').meta.val > 0)) {
+    return true;
+  }
+
+  // Gold is at max capacity and max is low
+  if (gold.value === gold.maxValue && gold.maxValue < 500) return true;
+
+  // Iron Will is active
+  if (gamePage.ironWill) return true;
+
+  return false;
+}
+
+/**
+ * Check if it's a good time to trade based on resource levels
+ * @return {Boolean} Whether it's a good time to trade
+ */
+function isGoodTimeToTrade() {
+  const gold = gamePage.resPool.get('gold');
+  const blueprint = gamePage.resPool.get('blueprint');
+  const solarRev = gamePage.religion.getRU('solarRevolution').val;
+  const mint = gamePage.bld.getBuildingExt('mint').meta.val;
+  const accelerator = gamePage.bld.getBuildingExt('accelerator').meta.val;
+  const transcendence = gamePage.religion.getRU("transcendence").on;
+
+  // Gold is near max capacity
+  if (gold.value > gold.maxValue * 0.95) return true;
+
+  // Have mint and sufficient gold
+  if (mint > 0 && gold.value > (accelerator < 1 ? 90 : Math.min(accelerator * 1000, 10000))) {
+    return true;
+  }
+
+  // Transcendence is active
+  if (transcendence) return true;
+
+  // Atheism or Pacifism challenge with sufficient gold
+  if ((gamePage.challenges.isActive("atheism") || gamePage.challenges.isActive("pacifism")) && 
+    gold.value > 500) {
+    return true;
+  }
+
+  // Iron Will with sufficient gold
+  if (gamePage.ironWill && gold.value > (solarRev === 1 ? 15 : 600)) return true;
+
+  // Low blueprints with Solar Revolution and sufficient gold
+  if (blueprint.value < 300 && solarRev === 1 && gold.value > 90) return true;
+
+  return false;
+}
+
+/**
+ * Trade with regular races based on resource needs
+ */
+function tradeWithRegularRaces() {
+  const tradersData = [
+    ['zebras', gamePage.diplomacy.get('zebras')],
+    ['griffins', gamePage.diplomacy.get('griffins')],
+    ['lizards', gamePage.diplomacy.get('lizards')],
+    ['sharks', gamePage.diplomacy.get('sharks')],
+    ['nagas', gamePage.diplomacy.get('nagas')],
+    ['spiders', gamePage.diplomacy.get('spiders')],
+    ['dragons', gamePage.diplomacy.get('dragons')]
+  ];
+
+  // Prepare traders with calculated selling ratios
+  const traders = tradersData
+    .filter(([name, race]) => {
+      if (!race.unlocked) return false;
+
+      const buyResource = race.buys[0];
+      const resource = gamePage.resPool.get(buyResource.name);
+
+      return buyResource.val <= resource.value && 
+        resource.value >= (resource.maxValue !== 0 ? resource.maxValue * 0.01 : 0);
+    })
+    .map(([name, race]) => {
+      // Calculate selling ratios
+      const sells = race.sells
+        .filter(sell => gamePage.diplomacy.isValidTrade(sell, race))
+        .map(calcSellRatio);
+
+      // Special case for zebras to add titanium
+      if (name === 'zebras') {
+        sells.push(calcSellRatio({ name: "titanium" }));
+      }
+
+      sells.sort((a, b) => a.ratio - b.ratio);
+
+      return [name, race.buys, sells];
+    });
+
+  // Sort by lowest sell ratio and get the best trade
+  if (traders.length === 0) return;
+
+  const bestTrade = traders.sort((a, b) => a[2][0].ratio - b[2][0].ratio)[0];
+  const raceName = bestTrade[0];
+  const race = gamePage.diplomacy.get(raceName);
+
+  if (gamePage.ironWill) {
+    // Special case for griffins in Iron Will mode
+    if (raceName === 'griffins') {
+      const buyResource = bestTrade[1][0];
+      const resource = gamePage.resPool.get(buyResource.name);
+
+      if (resource.value > resource.maxValue * 0.8) {
+        const tradeAmount = Math.floor(gamePage.diplomacy.getMaxTradeAmt(race) / 10);
+        gamePage.diplomacy.tradeMultiple(race, tradeAmount);
+        return;
+      }
+    }
+
+    gamePage.diplomacy.tradeAll(race);
+  } else {
+    // Special case for nagas when ivory is low
+    if (raceName === 'nagas') {
+      const ivory = gamePage.resPool.get('ivory');
+      const slab = gamePage.resPool.get('slab');
+
+      if (ivory.value < slab.value) {
+        return; // Skip trading with nagas
+      }
+    }
+
+    gamePage.diplomacy.tradeAll(race);
+  }
+}
+
+/**
+ * Main function to handle all automated trading
+ */
 function autoTrade() {
-        GlobalMsg["ressourceRetrieval"] = ''
-        if (gamePage.time.meta[0].meta[5].unlocked && gamePage.resPool.get("timeCrystal").value > gamePage.timeTab.cfPanel.children[0].children[6].model.prices.filter(res => res.name == "timeCrystal")[0].val * (gamePage.timeTab.cfPanel.children[0].children[6].model.metadata.val > 3 ? 0.9 : 0.05))
-        {
-          GlobalMsg["ressourceRetrieval"] = gamePage.timeTab.cfPanel.children[0].children[6].model.metadata.label + '(' + (gamePage.timeTab.cfPanel.children[0].children[6].model.metadata.val+1) + ') ' + Math.round((gamePage.resPool.get("timeCrystal").value / gamePage.timeTab.cfPanel.children[0].children[6].model.prices.filter(res => res.name == "timeCrystal")[0].val) * 100) + '%'
-        }
+  GlobalMsg["ressourceRetrieval"] = '';
 
-        if (gamePage.time.meta[0].meta[5].val == 0 && gamePage.resPool.get("timeCrystal").value < (gamePage.bld.getBuildingExt('chronosphere').meta.val < 10 ? Chronosphere10SummPrices()["timeCrystal"] : 6)){
-            // if resource retrieval is not yet researched, keep trading time crystals
-                if (gamePage.diplomacy.get('leviathans').unlocked && gamePage.diplomacy.get('leviathans').duration != 0 && gamePage.resPool.get('unobtainium').value > 5000) {
-                    gamePage.diplomacy.tradeMultiple(game.diplomacy.get("leviathans"),1);
-                }
-        }
-        if  ((gamePage.resPool.get('titanium').value > 5000 || gamePage.bld.getBuildingExt('reactor').meta.val > 0 ) && gamePage.resPool.get('uranium').value <  Math.min(gamePage.resPool.get('paragon').value,100) && gamePage.diplomacy.get('dragons').unlocked && gamePage.resPool.get('gold').value < gamePage.resPool.get('gold').maxValue * 0.95) {
-            gamePage.diplomacy.tradeAll(game.diplomacy.get("dragons"), 1);
-        }
+  // Check for time crystal retrieval
+  checkTimeRetrieval();
 
-        let titRes = gamePage.resPool.get('titanium');
-        let ironRes = gamePage.resPool.get('iron');
-        let unoRes = gamePage.resPool.get('unobtainium');
-        let woodRes = gamePage.resPool.get('wood');
-        let mineralsRes = gamePage.resPool.get('minerals');
-        let goldResource = gamePage.resPool.get('gold');
-        let ivoryRes = gamePage.resPool.get('ivory');
-        let slabRes = gamePage.resPool.get('slab');
-        let uranRes = gamePage.resPool.get('uranium');
-        let scaffoldRes = gamePage.resPool.get('scaffold');
-        let coalRes = gamePage.resPool.get('coal');
-        let cultureRes = gamePage.resPool.get('culture');
-        if ((cultureRes.value >= 10000 || cultureRes.value >= cultureRes.maxValue) || gamePage.challenges.isActive("pacifism")) {
-                embRefreshCnt += 1;
-                if (embRefreshCnt >= 10){
-                     gamePage.diplomacyTab.render();
-                     embRefreshCnt = 0;
-                }
-                embassy_buttons = gamePage.diplomacyTab.racePanels.filter( emb => emb.race.unlocked && emb.embassyButton != null && !emb.embassyButton.model.resourceIsLimited)
-                if (embassy_buttons.length > 0) {
-                    btn = embassy_buttons.sort(function(a, b) {return  a.race.embassyLevel - b.race.embassyLevel;})[0]
-                    btn.embassyButton.controller.buyItem(btn.embassyButton.model, {}, function(result) {
-                        if (result) {
-                            btn.embassyButton.update();
-                            return;
-                        }
-                    });
-                }
-        }
+  // Trade with leviathans and dragons
+  tradeWithLeviathans();
+  tradeWithDragons();
 
-         if (gamePage.diplomacy.get('leviathans').unlocked && gamePage.diplomacy.get('leviathans').duration != 0) {
-            //blackcoin  speculation
-            if (gamePage.science.get("blackchain").researched || gamePage.resPool.get("blackcoin").value > 0) {
-                if (gamePage.resPool.get("blackcoin").value > 0 && gamePage.calendar.cryptoPrice > 1090 ) {
-                    gamePage.diplomacy.sellBcoin()
-                }
-                if (!switches['CollectResBReset'] && gamePage.resPool.get("relic").value > (1000 + gamePage.resPool.get("blackcoin").value * 1000) && gamePage.calendar.cryptoPrice < 1000 ) {
-                    gamePage.diplomacy.buyBcoin()
-                }
-            }
-         }
+  // Handle building embassies
+  buildEmbassies();
 
-        if(((gamePage.religion.getRU('solarRevolution').val == 1 || ((gamePage.challenges.isActive("atheism") || gamePage.challenges.isActive("pacifism") ) && (gamePage.resPool.get('gold').value > 550 || gamePage.bld.getBuildingExt('mint').meta.val > 0 )  )) || (gamePage.resPool.get('gold').value == gamePage.resPool.get('gold').maxValue && gamePage.resPool.get('gold').maxValue < 500)) || (gamePage.ironWill)){
-            if ((goldResource.value > goldResource.maxValue * 0.95 || ((gamePage.bld.getBuildingExt('mint').meta.val > 0  && goldResource.value > (gamePage.bld.getBuildingExt('accelerator').meta.val < 1 ? 90 : Math.min(gamePage.bld.getBuildingExt('accelerator').meta.val * 1000, 10000))) ||  gamePage.religion.getRU("transcendence").on) || ((gamePage.challenges.isActive("atheism") || gamePage.challenges.isActive("pacifism")) && goldResource.value > 500)   ) || (gamePage.ironWill && goldResource.value > (gamePage.religion.getRU('solarRevolution').val == 1 ? 15 : 600) ) || (gamePage.resPool.get('blueprint').value < 300 && gamePage.religion.getRU('solarRevolution').val == 1 && goldResource.value > 90)) {
-                if (gamePage.diplomacyTab.racePanels.length != gamePage.diplomacy.races.filter(race => race.unlocked).length) {
-                    gamePage.diplomacyTab.render();
-                }
+  // Handle blackcoin speculation
+  handleBlackcoinSpeculation();
 
-                if (gamePage.diplomacy.get('leviathans').unlocked && gamePage.diplomacy.get('leviathans').duration != 0) {
-                    if (unoRes.value > 5000) {
-                        if (gamePage.time.meta[0].meta[5].unlocked && gamePage.resPool.get("timeCrystal").value > gamePage.timeTab.cfPanel.children[0].children[6].model.prices.filter(res => res.name == "timeCrystal")[0].val * (gamePage.timeTab.cfPanel.children[0].children[6].model.metadata.val > 2 ? 0.9 : 0.05)){
-                          // If we're close to the next resource retrieval, then trade for time crystals
-                            gamePage.diplomacy.tradeAll(game.diplomacy.get("leviathans"));
-                        } else if (!switches['CollectResBReset'] && gamePage.space.getBuilding('sunlifter').unlocked && gamePage.resPool.get("timeCrystal").value >= Chronosphere10SummPrices()['timeCrystal'] && gamePage.space.meta[5].meta[0].val < 30) {
-                            // maximize sunlifter level (best effort)
-                        } else if (switches['CollectResBReset'] && gamePage.resPool.get("timeCrystal").value < 1500) {
-                            gamePage.diplomacy.tradeMultiple(game.diplomacy.get("leviathans"),Math.min( gamePage.diplomacy.getMaxTradeAmt(game.diplomacy.get("leviathans")), Math.max(Math.floor(gamePage.resPool.get('unobtainium').value/5000),1)));
-                        }else if(!switches['CollectResBReset'] && (gamePage.bld.getBuildingExt('chronosphere').meta.val >= 10 && gamePage.resPool.get("timeCrystal").value <= gamePage.resPool.get("eludium").value / 5 )  ) {
-                            gamePage.diplomacy.tradeMultiple(game.diplomacy.get("leviathans"),Math.min( gamePage.diplomacy.getMaxTradeAmt(game.diplomacy.get("leviathans")), Math.max(Math.floor(gamePage.resPool.get('unobtainium').value/5000),1)));
-                        }
-                    }
+  // Only proceed with regular trading if conditions are met
+  if (!shouldTradeBeActive() || !isGoodTimeToTrade()) return;
 
-                    //Feed elders
-                    if (gamePage.diplomacy.get("leviathans").energy < gamePage.diplomacy.getMarkerCap() && (gamePage.resPool.get("necrocorn").value > (gamePage.religion.meta[0].meta[8].val > 0 ? ((gamePage.diplomacy.get("leviathans").energy + 1) * 10) : Math.ceil(gamePage.diplomacy.get("leviathans").energy/10)+1) &&  gamePage.diplomacy.get("leviathans").energy < (gamePage.religion.getZU("marker").val * 5 + 5))){
-                        gamePage.diplomacy.feedElders();
-                    }
-                }
+  // Ensure diplomacy tab is rendered if necessary
+  if (gamePage.diplomacyTab.racePanels.length !== 
+    gamePage.diplomacy.races.filter(race => race.unlocked).length) {
+    gamePage.diplomacyTab.render();
+  }
 
-                // name, buys, sells
-                let tradersAll = [
-                 ['zebras',
-                 gamePage.diplomacy.get('zebras').buys,
-                 [...gamePage.diplomacy.get('zebras').sells.filter(sl => gamePage.diplomacy.isValidTrade(sl, gamePage.diplomacy.get('zebras'))), {"name": "titanium"}].map(calc_sell_rate).sort(function(a, b) {return  a.ratio - b.ratio;})
-                 ],
-                 ['griffins',
-                 gamePage.diplomacy.get('griffins').buys,
-                 gamePage.diplomacy.get('griffins').sells.filter(sl => gamePage.diplomacy.isValidTrade(sl, gamePage.diplomacy.get('griffins'))).map(calc_sell_rate).sort(function(a, b) {return  a.ratio - b.ratio;})
-                 ],
-                 ['lizards',
-                 gamePage.diplomacy.get('lizards').buys,
-                 gamePage.diplomacy.get('lizards').sells.filter(sl => gamePage.diplomacy.isValidTrade(sl, gamePage.diplomacy.get('lizards'))).map(calc_sell_rate).sort(function(a, b) {return  a.ratio - b.ratio;})
-                 ],
-                 ['sharks',
-                 gamePage.diplomacy.get('sharks').buys,
-                 gamePage.diplomacy.get('sharks').sells.filter(sl => gamePage.diplomacy.isValidTrade(sl, gamePage.diplomacy.get('sharks'))).map(calc_sell_rate).sort(function(a, b) {return  a.ratio - b.ratio;})
-                 ],
-                 ['nagas',
-                 gamePage.diplomacy.get('nagas').buys,
-                 gamePage.diplomacy.get('nagas').sells.filter(sl => gamePage.diplomacy.isValidTrade(sl, gamePage.diplomacy.get('nagas'))).map(calc_sell_rate).sort(function(a, b) {return  a.ratio - b.ratio;})
-                 ],
-                 ['spiders',
-                 gamePage.diplomacy.get('spiders').buys,
-                 gamePage.diplomacy.get('spiders').sells.filter(sl => gamePage.diplomacy.isValidTrade(sl, gamePage.diplomacy.get('spiders'))).map(calc_sell_rate).sort(function(a, b) {return  a.ratio - b.ratio;})
-                 ],
-                 ['dragons',
-                 gamePage.diplomacy.get('dragons').buys,
-                 gamePage.diplomacy.get('dragons').sells.filter(sl => gamePage.diplomacy.isValidTrade(sl, gamePage.diplomacy.get('dragons'))).map(calc_sell_rate).sort(function(a, b) {return  a.ratio - b.ratio;})
-                 ],
-                ]
-                let trade = tradersAll.filter(tr => gamePage.diplomacy.get(tr[0]).unlocked && tr[1][0].val <= gamePage.resPool.get(tr[1][0].name).value && gamePage.resPool.get(tr[1][0].name).value >= (gamePage.resPool.get(tr[1][0].name).maxValue != 0 ? gamePage.resPool.get(tr[1][0].name).maxValue * 0.01 : 0)).sort(function(a, b) {return  a[2][0].ratio - b[2][0].ratio;})[0]
+  // Handle leviathan-specific trading
+  if (gamePage.diplomacy.get('leviathans').unlocked && 
+    gamePage.diplomacy.get('leviathans').duration !== 0) {
+    tradeWithLeviathans();
+  }
 
-                if (trade) {
-                    if (gamePage.ironWill) {
-                            if (trade[0] == 'griffins' &&  gamePage.resPool.get(trade[1][0].name).value > gamePage.resPool.get(trade[1][0].name).maxValue * 0.8 ) {
-                                gamePage.diplomacy.tradeMultiple(gamePage.diplomacy.get(trade[0]), Math.floor(gamePage.diplomacy.getMaxTradeAmt(gamePage.diplomacy.get(trade[0])) / 10));
-                            }
-                            else {
-                                gamePage.diplomacy.tradeAll(gamePage.diplomacy.get(trade[0]));
-                            }
-                    }
-                    else {
-                        if (trade[0] == 'nagas' &&  gamePage.resPool.get('ivory').value < gamePage.resPool.get('slab').value ) {
-                            // Do nothing
-                        }
-                        else {
-                             gamePage.diplomacy.tradeAll(gamePage.diplomacy.get(trade[0]));
-                        }
-                    }
-                }
-            }
-        }
-
+  // Trade with regular races
+  tradeWithRegularRaces();
 }
 
 // Hunt automatically
