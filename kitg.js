@@ -1080,13 +1080,34 @@ function autoTrade() {
   tradeWithRegularRaces();
 }
 
-// Hunt automatically
+/**
+ * Automatically hunts when catpower is near maximum or resources are low
+ * Hunts when either:
+ * 1. Catpower is above 90% of maximum capacity
+ * 2. Furs and ivory are less than 2% of maximum catpower
+ */
 function autoHunt() {
-    var tmpvalue =  Math.min(gamePage.resPool.get('furs').value, gamePage.resPool.get('ivory').value);
-	var catpower = gamePage.resPool.get('manpower');
-		if (!gamePage.challenges.isActive("pacifism") && (catpower.value > (catpower.maxValue * 0.9) || (tmpvalue/catpower.maxValue < 0.02))) {
-			gamePage.village.huntAll();
-		}
+  const gameResources = gamePage.resPool;
+  const catpower = gameResources.get('manpower');
+  
+  // Skip hunting if pacifism challenge is active
+  if (gamePage.challenges.isActive("pacifism")) {
+    return;
+  }
+  
+  // Get current fur and ivory amounts
+  const furs = gameResources.get('furs').value;
+  const ivory = gameResources.get('ivory').value;
+  const lowerResourceValue = Math.min(furs, ivory);
+  
+  // Calculate resource-to-catpower ratio
+  const resourceRatio = lowerResourceValue / catpower.maxValue;
+  const catpowerRatio = catpower.value / catpower.maxValue;
+  
+  // Hunt if catpower is high or resources are low
+  if (catpowerRatio > 0.9 || resourceRatio < 0.02) {
+    gamePage.village.huntAll();
+  }
 }
 
 var resources = [
