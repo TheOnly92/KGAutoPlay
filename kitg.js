@@ -322,7 +322,7 @@ function autoBuild() {
     // Check priority conditions
     if (Object.keys(craftPriority[0]).length > 0) {
       const isMainPriority = model.metadata.name === craftPriority[0];
-      const isNotPriorityBuilding = NOT_PRIORITY_BLD_NAMES.indexOf(model.metadata.name) > -1;
+      const isNotPriorityBuilding = NOT_PRIORITY_BLD_NAMES_SET.has(model.metadata.name) > -1;
       const hasNoPriorityResources = model.prices.filter(price =>
         craftPriority[3].indexOf(price.name) !== -1
       ).length === 0;
