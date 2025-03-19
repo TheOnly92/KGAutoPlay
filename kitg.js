@@ -3092,7 +3092,7 @@ function adjustRatiosForCrafting(resourcesAssign) {
           // ratio will be 0.1 when at 0% of required amount
           // ratio will be 0.2 when at 100% of required amount
           const progressRatio = Math.min(currentValue / requiredValue, 1);
-          const adjustedRatio = 0.1 + (progressRatio * 0.1);
+          const adjustedRatio = 0.05 + (progressRatio * 0.05);
           
           // Set the new dynamic ratio
           resourcesAssign[matchingKey].ratioNoSolar = adjustedRatio;
