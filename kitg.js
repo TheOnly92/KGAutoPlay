@@ -2800,8 +2800,8 @@ function handleTearRefinement(religionTab, resPool) {
     try {
       religionTab.refineBtn.controller.buyItem(
         religionTab.refineBtn.model,
-        function(result.itemBought) {
-          if (result) {
+        function(result) {
+          if (result.itemBought) {
             gamePage.msg('Refine tears: BLS(' + Math.trunc(sorrowResource.value) + ')');
           }
         }
