@@ -357,7 +357,7 @@ function autoBuild() {
       else if (shouldBuildChronosphere(metadata)) {
         buyBuilding(building, controller, model);
       }
-      else if (gameState.ironWill) {
+      else if (gameState.ironWill || (gamePage.resPool.get("burnedParagon").value + gamePage.resPool.get("paragon") == 0 && (gamePage.tabs[0].children.length < 3 || gamePage.tabs[0].children[2].metadata.val < 30))) {
         if (shouldBuildInIronWill(metadata, prices, gameState)) {
           buyBuilding(building, controller, model);
         }
@@ -3109,74 +3109,6 @@ function getValidAssignments(resourcesAssign) {
 }
 
 /**
- * Sort comparison to determine which assignment "needs" more workers.
- * A lower computed value means higher priority (more needed).
- * This logic is carried over from the original code but uses named properties.
- */
-function sortJobAssignments(a, b) {
-  const {
-    resource: aResource,
-    job: aJobName,
-    ratioNoSolar: aRatioNoSolar,
-    ratioSolar: aRatioSolar
-  } = a;
-
-  const {
-    resource: bResource,
-    job: bJobName,
-    ratioNoSolar: bRatioNoSolar,
-    ratioSolar: bRatioSolar
-  } = b;
-
-  const aJob = gamePage.village.getJob(aJobName);
-  const bJob = gamePage.village.getJob(bJobName);
-
-  // Decide which ratio to use based on whether solar revolution / atheism is active
-  const isSolar = isSolarOrAtheismActive();
-  const aRatio = isSolar ? aRatioSolar : aRatioNoSolar;
-  const bRatio = isSolar ? bRatioSolar : bRatioNoSolar;
-
-  let aTick, aJobsCount;
-  const aResourceObj = gamePage.resPool.get(aResource);
-  if (aResourceObj.value >= aResourceObj.maxValue) {
-    // If the resource is at or above capacity, treat tick as "maxValue * 10" (a big number).
-    aTick      = aResourceObj.maxValue * 10;
-    aJobsCount = aRatio;
-  } else {
-    // If not at capacity, compute actual resource production plus 1
-    aTick      = gamePage.calcResourcePerTick(aResource) + 1;
-    aJobsCount = (aJob?.value ?? 0) + 1;
-  }
-
-  let bTick, bJobsCount;
-  const bResourceObj = gamePage.resPool.get(bResource);
-  if (bResourceObj.value >= bResourceObj.maxValue) {
-    bTick      = bResourceObj.maxValue * 10;
-    bJobsCount = bRatio;
-  } else {
-    bTick      = gamePage.calcResourcePerTick(bResource) + 1;
-    bJobsCount = (bJob?.value ?? 0) + 1;
-  }
-
-  // Recreates the original formula for "priority value."
-  // The lower the final value => the more we need to assign workers to that job.
-  // aVal vs. bVal => if aVal is smaller, 'a' is more urgent.
-  const aVal = (
-    (aTick / aResourceObj.maxValue) *
-    (aResourceObj.value / aResourceObj.maxValue) *
-    (aRatio * aJobsCount)
-  ) * aRatio;
-
-  const bVal = (
-    (bTick / bResourceObj.maxValue) *
-    (bResourceObj.value / bResourceObj.maxValue) *
-    (bRatio * bJobsCount)
-  ) * bRatio;
-
-  return aVal - bVal;
-}
-
-/**
  * Attempts to assign a free kitten to the highest-priority job if available.
  * If no free kittens remain, tries to reassign from the lowest-priority job
  * that has a decent number of workers.
@@ -3681,7 +3613,7 @@ function autoRefine() {
       }
     }
   }
-  else if (bonfire.model.x100Link && (game.ironWill || (gamePage.resPool.get("burnedParagon").value + gamePage.resPool.get("paragon") == 0 && gamePage.village.getKittens() < 20)) && wood.value < wood.maxValue * 0.1) {
+  else if (bonfire.model.x100Link && (game.ironWill || (gamePage.resPool.get("burnedParagon").value + gamePage.resPool.get("paragon") == 0 && gamePage.village.getKittens() <= 2)) && wood.value < wood.maxValue * 0.1) {
     // Special case for ironWill mode
     if (bonfire.model.x100Link.visible) {
       bonfire.model.x100Link.handler(bonfire.model);
