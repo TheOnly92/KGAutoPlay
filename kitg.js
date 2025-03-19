@@ -3328,11 +3328,9 @@ function autoAssign() {
   // 3) Filter to valid/unlocked jobs
   const validAssignments = getValidAssignments(resourcesAssign);
 
-  const debugAssign = Object.values(resourcesAssign).sort((a, b) => a.ratioNoSolar - b.ratioNoSolar);
-  GlobalMsg['resourceAssign'] = debugAssign[0].resource + ' (' + debugAssign[0].ratioNoSolar + '), ' + debugAssign[1].resource + ' (' + debugAssign[1].ratioNoSolar + ')';
-
   // 4) Sort those assignments by need (lowest value => highest priority)
   const sortedAssignments = validAssignments.sort(sortJobAssignments);
+  GlobalMsg['resourceAssign'] = sortedAssignments[0].resource + ' (' + sortedAssignments[0].ratioNoSolar + '), ' + sortedAssignments[1].resource + ' (' + sortedAssignments[1].ratioNoSolar + ')';
 
   // 5) Assign or reassign kittens to the top priority
   autoAllocateKittens(sortedAssignments);
