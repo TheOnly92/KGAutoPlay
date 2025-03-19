@@ -3065,19 +3065,19 @@ function adjustRatiosForCrafting(resourcesAssign) {
     neededResourceNames.forEach((resName) => {
       const requiredValue = buildPrices.find(price => price.name === resName)?.val ?? 0;
       const currentValue = gamePage.resPool.get(resName).value;
-      
+
       if (currentValue < requiredValue) {
         // Find the resourcesAssign key that includes this resource in the string
         const matchingKey = Object.keys(resourcesAssign)
           .find(k => k.includes(resName));
-        
+
         if (matchingKey) {
           // Calculate ratio based on how close we are to the required amount
           // ratio will be 0.1 when at 0% of required amount
           // ratio will be 0.2 when at 100% of required amount
           const progressRatio = Math.min(currentValue / requiredValue, 1);
           const adjustedRatio = 0.075 + (progressRatio * 0.025);
-          
+
           // Set the new dynamic ratio
           resourcesAssign[matchingKey].ratioNoSolar = adjustedRatio;
           resourcesAssign[matchingKey].ratioSolar = adjustedRatio;
@@ -3312,8 +3312,42 @@ function autoAssign() {
   // 3) Filter to valid/unlocked jobs
   const validAssignments = getValidAssignments(resourcesAssign);
 
+  const isSolar = isSolarOrAtheismActive();
+  const assignmentScores = validAssignments.map(assignment => {
+    const {resource, job: jobName, ratioNoSolar, ratioSolar} = assignment;
+    const job = gamePage.village.getJob(jobName);
+    const ratio = isSolar ? ratioSolar : ratioNoSolar;
+
+    let tick, jobsCount;
+    const resourceObj = gamePage.resPool.get(resource);
+    if (resourceObj.value >= resourceObj.maxValue) {
+      // If the resource is at or above capacity, treat tick as "maxValue * 10" (a big number).
+      tick = resourceObj.maxValue * 10;
+      jobsCount = ratio;
+    } else {
+      // If not at capacity, compute actual resource production plus 1
+      tick = gamePage.calcResourcePerTick(resource) + 1;
+      jobsCount = (job?.value ?? 0) + 1;
+    }
+
+    const score = (
+      (tick / resourceObj.maxValue) *
+      (resourceObj.value / resourceObj.maxValue) *
+      (ratio * jobsCount)
+    ) * ratio;
+
+    return {
+      ...assignment,
+      score,
+    };
+  });
+
   // 4) Sort those assignments by need (lowest value => highest priority)
-  const sortedAssignments = validAssignments.sort(sortJobAssignments);
+  const sortedAssignments = assignmentScores.sort((a, b) => {
+    return a.score - b.score;
+  });
+
+  GlobalMsg.priorityJob = `${sortedAssignments[0].job} (${sortedAssignments[0].score}), ${sortedAssignments[1].job} (${sortedAssignments[1].score})`;
 
   // 5) Assign or reassign kittens to the top priority
   autoAllocateKittens(sortedAssignments);
