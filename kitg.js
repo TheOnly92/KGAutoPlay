@@ -2833,7 +2833,7 @@ function autoAssign() {
   const hasSolarRevolution = game.religion.getRU('solarRevolution').val == 1;
   const kittenCount = village.getKittens();
 
-  globalMsg['priorityJob'] = '';
+  GlobalMsg['priorityJob'] = '';
 
   // Resource assignment configuration map
   // Format: [resourceName, jobName, normalPriority, faithPriority]
