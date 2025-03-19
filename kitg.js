@@ -15,7 +15,7 @@ var htmlMenuAddition = '<div id="farRightColumn" class="column">' +
 '<hr size=3>' +
 '<button id="Collector" title = "Collect late game res(Tcrystal, Relic, Void) before reset." style="color:red" onclick="autoSwitch(\'CollectResBReset\',  \'Collector\')"> CollectResBReset </button></br>' +
 '<hr size=3>' +
-'<button id="SellSpace" onclick="SellSpaceAndReset();">Sell Space and Reset</button> </br>' +
+'<button id="SellSpace" onclick="sellSpaceAndReset();">Sell Space and Reset</button> </br>' +
 '<hr size=3>' +
 '<button id="IronWill" style="color:red" onclick="autoSwitch(\'Iron Will\',  \'IronWill\')"> IronWill </button></br>' +
 '</div>' +
@@ -454,15 +454,15 @@ function shouldBuildChronosphere(metadata) {
   // Case 2: Under 20 chronospheres with time tab and resources
   if (chronosphereVal < 20 &&
     gamePage.timeTab.visible &&
-    timeCrystalResource.value - Chronosphere10SummPrices()["timeCrystal"] > 100 &&
+    timeCrystalResource.value - calculateChronosphere10Prices()["timeCrystal"] > 100 &&
     gamePage.time.meta[0].meta[5].val > 0) {
     return true;
   }
 
   // Case 3: Under 10 chronospheres with enough resources
   if (chronosphereVal < 10 &&
-    ((unobtainiumResource.value >= Chronosphere10SummPrices()["unobtainium"] &&
-      timeCrystalResource.value >= Chronosphere10SummPrices()["timeCrystal"]) ||
+    ((unobtainiumResource.value >= calculateChronosphere10Prices()["unobtainium"] &&
+      timeCrystalResource.value >= calculateChronosphere10Prices()["timeCrystal"]) ||
       unobtainiumResource.value >= unobtainiumResource.maxValue)) {
     return true;
   }
@@ -751,7 +751,7 @@ function tradeWithLeviathans() {
   // Handle time crystal trades
   if (gamePage.time.meta[0].meta[5].val === 0 &&
     timeCrystal.value < (gamePage.bld.getBuildingExt('chronosphere').meta.val < 10 ?
-      Chronosphere10SummPrices()["timeCrystal"] : 6)) {
+      calculateChronosphere10Prices()["timeCrystal"] : 6)) {
     if (unobtainium.value > 5000) {
       gamePage.diplomacy.tradeMultiple(game.diplomacy.get("leviathans"), 1);
     }
@@ -773,7 +773,7 @@ function tradeWithLeviathans() {
     gamePage.diplomacy.tradeAll(leviathans);
   } else if (!switches['CollectResBReset'] &&
     gamePage.space.getBuilding('sunlifter').unlocked &&
-    timeCrystal.value >= Chronosphere10SummPrices()['timeCrystal'] &&
+    timeCrystal.value >= calculateChronosphere10Prices()['timeCrystal'] &&
     gamePage.space.meta[5].meta[0].val < 30) {
     // Maximize sunlifter level (best effort)
     // No trade action needed
@@ -2759,7 +2759,7 @@ function handleZigguratUpgrades(religionTab, resPool) {
     // Check if we should skip for unobtainium requirements
     const unobtainiumPrice = btn.model.prices.find(res => res.name == "unobtainium");
     const reservedUnobtainium = gamePage.bld.getBuildingExt('chronosphere').meta.val < 10 ?
-      Chronosphere10SummPrices()["unobtainium"] : 0;
+      calculateChronosphere10Prices()["unobtainium"] : 0;
 
     if (unobtainiumPrice && unobtainiumPrice.val >= (resPool.get('unobtainium').value - reservedUnobtainium)) {
       continue;
@@ -3562,25 +3562,25 @@ function autoNip() {
   const HUT_THRESHOLD = 40;
   const CLICK_THRESHOLD = 2500;
   const MESSAGE_INTERVAL = 150;
-  
+ 
   // Check if gathering conditions are met
   const hutCount = gamePage.bld.buildingsData[0].val;
   const catnipAmount = gamePage.resPool.get('catnip').value;
   const clickCount = gamePage.gatherClicks;
   const isIronWillActive = gamePage.ironWill;
-  
-  const shouldGather = 
-    hutCount < HUT_THRESHOLD && 
-    catnipAmount < CATNIP_THRESHOLD && 
+ 
+  const shouldGather =
+    hutCount < HUT_THRESHOLD &&
+    catnipAmount < CATNIP_THRESHOLD &&
     (clickCount < CLICK_THRESHOLD || isIronWillActive);
-  
+ 
   if (!shouldGather) {
     return;
   }
-  
+ 
   // Get the gather button from the first tab's first child
   const gatherButton = gamePage.tabs[0].children[0];
-  
+ 
   try {
     // Attempt to click the gather button
     gatherButton.controller.buyItem(gatherButton.model, {}, (result) => {
@@ -3606,22 +3606,22 @@ function autoRefine() {
     // Basic conditions
     const hasLowKittens = game.village.getKittens() < 14;
     const workshopNotAvailable = !game.workshopTab.visible;
-    const winterChallengeException = !game.challenges.isActive("winterIsComing") || 
+    const winterChallengeException = !game.challenges.isActive("winterIsComing") ||
       game.bld.getBuildingExt('hut').meta.val == 0;
     const fieldUnlocked = game.bld.getBuildingExt('field').meta.unlocked;
 
     // Resource conditions
     const excessCatnip = catnip.value > wood.value * 5;
     const season = game.calendar.season;
-    const catnipThreshold = season >= 1 
-      ? Math.max(field.model.prices.find(res => res.name == "catnip").val * 2, 100) 
+    const catnipThreshold = season >= 1
+      ? Math.max(field.model.prices.find(res => res.name == "catnip").val * 2, 100)
       : 100;
     const catnipAboveThreshold = catnip.value > Math.min(catnip.maxValue * 0.9, catnipThreshold);
 
-    return (hasLowKittens || workshopNotAvailable) && 
-      winterChallengeException && 
-      fieldUnlocked && 
-      excessCatnip && 
+    return (hasLowKittens || workshopNotAvailable) &&
+      winterChallengeException &&
+      fieldUnlocked &&
+      excessCatnip &&
       catnipAboveThreshold;
   };
 
@@ -3632,11 +3632,11 @@ function autoRefine() {
     if (bonfire.model.x100Link.visible && field.model.resourceIsLimited) {
       // Refine 100 at once
       bonfire.model.x100Link.handler(bonfire.model);
-    } 
+    }
     else if (field.model.resourceIsLimited && bonfire.model.visible) {
       // Refine once
       bonfire.controller.buyItem(bonfire.model, {}, () => {});
-    } 
+    }
     else {
       // Calculate optimal refining limit
       const catnipPrice = bonfire.model.prices.find(res => res.name == "catnip").val;
@@ -3656,7 +3656,7 @@ function autoRefine() {
         }
       }
     }
-  } 
+  }
   else if (bonfire.model.x100Link && game.ironWill && wood.value < wood.maxValue * 0.1) {
     // Special case for ironWill mode
     if (bonfire.model.x100Link.visible) {
@@ -3671,7 +3671,7 @@ function autoRefine() {
  */
 function upgradeByModel(target) {
     const metadataRaw = target.controller.getMetadataRaw(target.model);
-    
+   
     // Initialize stage if needed and increment
     metadataRaw.stage = metadataRaw.stage || 0;
     metadataRaw.stage++;
@@ -3679,12 +3679,12 @@ function upgradeByModel(target) {
     // Reset values
     metadataRaw.val = 0;
     metadataRaw.on = 0;
-    
+   
     // Calculate effects if method exists
     if (metadataRaw.calculateEffects) {
         metadataRaw.calculateEffects(metadataRaw, target.controller.game);
     }
-    
+   
     // Apply upgrades and render
     target.controller.game.upgrade(metadataRaw.upgrades);
     target.controller.game.render();
@@ -3698,21 +3698,21 @@ let postApocalypseIsCompleted = true;
  */
 function upgradeBuildings() {
     const game = gamePage;
-    
+   
     // Unlock random race if diplomatic options available
     if (game.diplomacy.hasUnlockedRaces()) {
         game.diplomacy.unlockRandomRace();
     }
-    
+   
     // Enable reactor automation when conditions are met
     enableReactorAutomationIfReady();
-    
+   
     // Upgrade buildings that are ready for next stage
     upgradeReadyBuildings();
-    
+   
     // Manage building activations
     manageProducingBuildings();
-    
+   
     // Handle apocalypse challenge specific logic
     handleApocalypseChallengeLogic();
 }
@@ -3723,14 +3723,14 @@ function upgradeBuildings() {
 function enableReactorAutomationIfReady() {
     const game = gamePage;
     const reactor = game.bld.getBuildingExt('reactor').meta;
-    
-    if (reactor.unlocked && 
-        !reactor.isAutomationEnabled && 
-        reactor.val > 0 && 
-        game.workshop.get("thoriumReactors").researched && 
-        game.resPool.get('thorium').value > 10000 && 
+   
+    if (reactor.unlocked &&
+        !reactor.isAutomationEnabled &&
+        reactor.val > 0 &&
+        game.workshop.get("thoriumReactors").researched &&
+        game.resPool.get('thorium').value > 10000 &&
         game.resPool.get('uranium').perTickCached > 250) {
-        
+       
         reactor.isAutomationEnabled = true;
     }
 }
@@ -3740,15 +3740,15 @@ function enableReactorAutomationIfReady() {
  */
 function upgradeReadyBuildings() {
     const game = gamePage;
-    
+   
     // Filter for buildings ready to upgrade
-    const buildingsToUpgrade = game.bld.meta[0].meta.filter(building => 
-        building.stages && 
-        building.stages[1].stageUnlocked && 
-        building.stage === 0 && 
+    const buildingsToUpgrade = game.bld.meta[0].meta.filter(building =>
+        building.stages &&
+        building.stages[1].stageUnlocked &&
+        building.stage === 0 &&
         isReadyForUpgrade(building)
     );
-    
+   
     // Upgrade each ready building
     for (const building of buildingsToUpgrade) {
         const upgradeTarget = game.tabs[0].children.find(
@@ -3765,27 +3765,27 @@ function upgradeReadyBuildings() {
  */
 function isReadyForUpgrade(building) {
     const game = gamePage;
-    
+   
     // Library upgrade conditions
     if (building.name === "library") {
-        return game.space.getProgram("orbitalLaunch").val === 1 && 
-               !game.challenges.isActive("energy") && 
+        return game.space.getProgram("orbitalLaunch").val === 1 &&
+               !game.challenges.isActive("energy") &&
                game.bld.getBuildingExt('aqueduct').meta.stage !== 0;
     }
-    
+   
     // Aqueduct upgrade conditions
     if (building.name === "aqueduct") {
-        return !game.challenges.isActive("winterIsComing") && 
-               ((game.resPool.get('paragon').value > 200 && game.bld.getBuildingExt('accelerator').meta.val > 2) || 
+        return !game.challenges.isActive("winterIsComing") &&
+               ((game.resPool.get('paragon').value > 200 && game.bld.getBuildingExt('accelerator').meta.val > 2) ||
                 (game.resPool.get('paragon').value <= 200 && game.space.getBuilding('hydroponics').val > 0));
     }
-    
+   
     // Warehouse upgrade conditions
     if (building.name === "warehouse") {
-        return game.resPool.get("eludium").value >= 200000 && 
+        return game.resPool.get("eludium").value >= 200000 &&
                game.time.getCFU("ressourceRetrieval").val > 3;
     }
-    
+   
     return true;
 }
 
@@ -3795,22 +3795,22 @@ function isReadyForUpgrade(building) {
 function manageProducingBuildings() {
     const game = gamePage;
     const isPostApocalypse = game.challenges.isActive("postApocalypse");
-    
+   
     // Steamworks management
     manageBuildingPower('steamworks', !isPostApocalypse && game.resPool.get('coal').value > 0);
-    
+   
     // Reactor management
     manageBuildingPower('reactor', game.resPool.get('uranium').value > 100);
-    
+   
     // Magneto management
     manageBuildingPower('magneto', !isPostApocalypse && game.resPool.get('oil').value > 0);
-    
+   
     // Moon outpost management
     manageSpaceBuildingPower();
-    
+   
     // Smelter management
     manageSmelterPower();
-    
+   
     // Mint management
     manageMintPower();
 }
@@ -3823,7 +3823,7 @@ function manageProducingBuildings() {
 function manageBuildingPower(buildingName, condition) {
     const game = gamePage;
     const building = game.bld.getBuildingExt(buildingName).meta;
-    
+   
     if (building.unlocked) {
         if (condition && building.on < building.val) {
             building.on = building.val;
@@ -3839,17 +3839,17 @@ function manageBuildingPower(buildingName, condition) {
 function manageSpaceBuildingPower() {
     const game = gamePage;
     const moonOutpost = game.space.getBuilding("moonOutpost");
-    
+   
     if (moonOutpost.unlocked && !game.challenges.isActive("energy")) {
-        if (moonOutpost.on < moonOutpost.val && 
-            game.resPool.get('uranium').value > 1000 && 
+        if (moonOutpost.on < moonOutpost.val &&
+            game.resPool.get('uranium').value > 1000 &&
             game.resPool.get('unobtainium').value < game.resPool.get('unobtainium').maxValue) {
-            
+           
             moonOutpost.on = moonOutpost.val;
-        } else if (moonOutpost.on > 0 && 
-                  (game.resPool.get('uranium').value <= 1000 || 
+        } else if (moonOutpost.on > 0 &&
+                  (game.resPool.get('uranium').value <= 1000 ||
                    game.resPool.get('unobtainium').value >= game.resPool.get('unobtainium').maxValue)) {
-            
+           
             moonOutpost.on--;
         }
     }
@@ -3861,26 +3861,26 @@ function manageSpaceBuildingPower() {
 function manageSmelterPower() {
     const game = gamePage;
     const smelter = game.bld.getBuildingExt('smelter').meta;
-    
-    if (!smelter.unlocked || 
+   
+    if (!smelter.unlocked ||
         (game.challenges.isActive("postApocalypse") && game.village.getKittens() >= 10)) {
         return;
     }
-    
+   
     const shouldIncreaseSmelters = determineSmelterIncrease();
-    
+   
     if (shouldIncreaseSmelters) {
         if (game.ironWill) {
             if (smelter.val >= smelter.on) {
                 smelter.on = Math.min(Math.floor(game.resPool.get('minerals').value / 100), smelter.val);
-                
+               
                 const calciner = game.bld.getBuildingExt('calciner').meta;
                 calciner.on = Math.min(
                     Math.max(
-                        Math.floor(game.resPool.get('coal').value / (game.resPool.get('coal').maxValue / calciner.val)), 
+                        Math.floor(game.resPool.get('coal').value / (game.resPool.get('coal').maxValue / calciner.val)),
                         1
-                    ), 
-                    Math.floor(game.resPool.get('minerals').value / 1000), 
+                    ),
+                    Math.floor(game.resPool.get('minerals').value / 1000),
                     calciner.val
                 );
             }
@@ -3891,17 +3891,17 @@ function manageSmelterPower() {
         if (game.ironWill) {
             if (game.bld.getBuildingExt('amphitheatre').meta.val > 3) {
                 smelter.on = Math.min(
-                    Math.floor(game.resPool.get('minerals').value / 100), 
+                    Math.floor(game.resPool.get('minerals').value / 100),
                     smelter.on - 1
                 );
-                
+               
                 const calciner = game.bld.getBuildingExt('calciner').meta;
                 calciner.on = Math.min(
                     Math.max(
-                        Math.floor(game.resPool.get('coal').value / (game.resPool.get('coal').maxValue / calciner.val)), 
+                        Math.floor(game.resPool.get('coal').value / (game.resPool.get('coal').maxValue / calciner.val)),
                         1
-                    ), 
-                    Math.floor(game.resPool.get('minerals').value / 1000), 
+                    ),
+                    Math.floor(game.resPool.get('minerals').value / 1000),
                     calciner.val
                 );
             } else {
@@ -3919,36 +3919,36 @@ function manageSmelterPower() {
  */
 function determineSmelterIncrease() {
     const game = gamePage;
-    
+   
     // Iron will specific logic
     if (game.ironWill) {
         return (
-            (game.diplomacy.get('nagas').unlocked && 
-             game.resPool.get('gold').unlocked && 
+            (game.diplomacy.get('nagas').unlocked &&
+             game.resPool.get('gold').unlocked &&
              game.resPool.get('minerals').value / 100 > game.bld.getBuildingExt('smelter').meta.on) ||
-            ((game.workshop.get("goldOre").researched && 
-              game.bld.getBuildingExt('amphitheatre').meta.val > 3) || 
+            ((game.workshop.get("goldOre").researched &&
+              game.bld.getBuildingExt('amphitheatre').meta.val > 3) ||
              game.resPool.get('iron').value < 100)
         );
     }
-    
+   
     // Regular logic based on resource production rates
     const woodProduction = (
-        game.calcResourcePerTick('wood') + 
-        game.getResourcePerTickConvertion('wood') + 
-        game.bld.getBuildingExt('smelter').meta.effects.woodPerTickCon + 
+        game.calcResourcePerTick('wood') +
+        game.getResourcePerTickConvertion('wood') +
+        game.bld.getBuildingExt('smelter').meta.effects.woodPerTickCon +
         game.calcResourcePerTick('wood') * game.prestige.getParagonProductionRatio()
     ) * 5;
-    
+   
     const mineralsProduction = (
-        game.calcResourcePerTick('minerals') + 
-        game.getResourcePerTickConvertion('minerals') + 
-        game.bld.getBuildingExt('smelter').meta.effects.mineralsPerTickCon + 
+        game.calcResourcePerTick('minerals') +
+        game.getResourcePerTickConvertion('minerals') +
+        game.bld.getBuildingExt('smelter').meta.effects.mineralsPerTickCon +
         game.calcResourcePerTick('minerals') * game.prestige.getParagonProductionRatio()
     ) * 5;
-    
+   
     return (
-        woodProduction > game.bld.getBuildingExt('smelter').meta.on && 
+        woodProduction > game.bld.getBuildingExt('smelter').meta.on &&
         mineralsProduction > game.bld.getBuildingExt('smelter').meta.on
     );
 }
@@ -3959,11 +3959,11 @@ function determineSmelterIncrease() {
 function manageMintPower() {
     const game = gamePage;
     const mint = game.bld.getBuildingExt("mint").meta;
-    
+   
     if (game.resPool.get('paragon').value < 200 && mint.val > 1 && game.calendar.year < 2000) {
         const manpower = game.resPool.get('manpower');
         const requiredManpower = mint.on * (manpower.maxValue / mint.val);
-        
+       
         if (manpower.value > requiredManpower) {
             if (mint.on < mint.val) {
                 mint.on++;
@@ -3982,26 +3982,26 @@ function manageMintPower() {
 function handleApocalypseChallengeLogic() {
     const game = gamePage;
     const isPostApocalypse = game.challenges.isActive("postApocalypse");
-    
+   
     // Disable buildings during most of post-apocalypse challenge
-    if (isPostApocalypse && 
-        game.time.getCFU("ressourceRetrieval").val > 0 && 
+    if (isPostApocalypse &&
+        game.time.getCFU("ressourceRetrieval").val > 0 &&
         (game.calendar.cycle != 5 || (game.calendar.day <= 10 || game.calendar.day >= 90))) {
-        
+       
         disableProductionBuildings();
         postApocalypseIsCompleted = false;
     }
-    
+   
     // Enable buildings during summer in post-apocalypse or after challenge completion
-    if ((!postApocalypseIsCompleted && !isPostApocalypse) || 
-        (isPostApocalypse && 
-         game.time.getCFU("ressourceRetrieval").val > 0 && 
-         game.calendar.cycle == 5 && 
-         game.calendar.day > 10 && 
+    if ((!postApocalypseIsCompleted && !isPostApocalypse) ||
+        (isPostApocalypse &&
+         game.time.getCFU("ressourceRetrieval").val > 0 &&
+         game.calendar.cycle == 5 &&
+         game.calendar.day > 10 &&
          game.calendar.day < 90)) {
-        
+       
         enableAllProductionBuildings();
-        
+       
         if (!postApocalypseIsCompleted && !isPostApocalypse) {
             postApocalypseIsCompleted = true;
         }
@@ -4013,14 +4013,14 @@ function handleApocalypseChallengeLogic() {
  */
 function disableProductionBuildings() {
     const game = gamePage;
-    
+   
     game.bld.getBuildingExt('mine').meta.on = 0;
     game.bld.getBuildingExt('quarry').meta.on = 0;
     game.bld.getBuildingExt('calciner').meta.on = 0;
     game.bld.getBuildingExt('steamworks').meta.on = 0;
     game.bld.getBuildingExt('magneto').meta.on = 0;
     game.bld.getBuildingExt('oilWell').meta.isAutomationEnabled = false;
-    
+   
     if (game.workshop.get("geodesy").researched) {
         game.bld.getBuildingExt('smelter').meta.on = 0;
     }
@@ -4031,7 +4031,7 @@ function disableProductionBuildings() {
  */
 function enableAllProductionBuildings() {
     const game = gamePage;
-    
+   
     game.bld.getBuildingExt('mine').meta.on = game.bld.getBuildingExt('mine').meta.val;
     game.bld.getBuildingExt('quarry').meta.on = game.bld.getBuildingExt('quarry').meta.val;
     game.bld.getBuildingExt('calciner').meta.on = game.bld.getBuildingExt('calciner').meta.val;
@@ -4041,26 +4041,53 @@ function enableAllProductionBuildings() {
     game.bld.getBuildingExt('oilWell').meta.isAutomationEnabled = true;
 }
 
-function ResearchSolarRevolution() {
-        GlobalMsg['solarRevolution'] = ''
-        if (gamePage.religion.getRU('solarRevolution').val == 0 && !gamePage.challenges.isActive("atheism")){
-            if (gamePage.science.get('theology').researched){
-                GlobalMsg['solarRevolution'] =  gamePage.religion.getRU("solarRevolution").label
-            }
-            if (  gamePage.tabs[5].rUpgradeButtons.filter(res => res.model.metadata.name == "solarRevolution" && res.model.visible &&  res.model.enabled && res.model.resourceIsLimited == false).length > 0){
-                    var btn = gamePage.tabs[5].rUpgradeButtons[5];
-                    try {
-                        btn.controller.buyItem(btn.model, {}, function(result) {
-                            if (result) {
-                                btn.update();
-                                gamePage.msg('Religion researched: ' + btn.model.name);
-                            }
-                        });
-                    } catch(err) {
-                        console.log(err);
-                    }
-            }
-	    }
+/**
+ * Research the Solar Revolution upgrade if conditions are met
+ * @returns {string} The name of the researched upgrade or empty string
+ */
+function researchSolarRevolution() {
+  // Clear previous message
+  GlobalMsg['solarRevolution'] = '';
+
+  // Check if Solar Revolution is already researched or if atheism challenge is active
+  const solarRevolution = gamePage.religion.getRU('solarRevolution');
+  if (solarRevolution.val > 0 || gamePage.challenges.isActive("atheism")) {
+    return GlobalMsg['solarRevolution'];
+  }
+
+  // Check if theology is researched to display the label
+  if (gamePage.science.get('theology').researched) {
+    GlobalMsg['solarRevolution'] = solarRevolution.label;
+  }
+
+  // Find the Solar Revolution button if it's visible and available
+  const religionTab = gamePage.tabs[5];
+  const solarRevolutionButton = religionTab.rUpgradeButtons.find(button =>
+    button.model.metadata.name === "solarRevolution" &&
+    button.model.visible &&
+    button.model.enabled &&
+    !button.model.resourceIsLimited
+  );
+
+  // Research Solar Revolution if the button is found
+  if (solarRevolutionButton) {
+    try {
+      solarRevolutionButton.controller.buyItem(
+        solarRevolutionButton.model,
+        {},
+        result => {
+          if (result) {
+            solarRevolutionButton.update();
+            gamePage.msg('Religion researched: ' + solarRevolutionButton.model.name);
+          }
+        }
+      );
+    } catch (error) {
+      console.error('Error researching Solar Revolution:', error);
+    }
+  }
+
+  return GlobalMsg['solarRevolution'];
 }
 
 function Timepage() {
@@ -4256,109 +4283,149 @@ function Timepage() {
 
 }
 
-function Service(){
-    gamePage.ui.render();
-    if (!switches["Iron Will"]) {
-        gamePage.ironWill = false;
-    }
+function service(){
+  gamePage.ui.render();
+  if (!switches["Iron Will"]) {
+    gamePage.ironWill = false;
+  }
 }
 
-var ActualTabs = Object.values(gamePage.tabs.filter(tab => tab.tabName != "Stats"));
+const actualTabs = Object.values(gamePage.tabs.filter(tab => tab.tabName != "Stats"));
 
-function RenderNewTabs(){
-    if(gamePage.tabs.filter(tab => tab.tabName != "Stats"  && !ActualTabs.includes(tab)).length > 0) {
-        gamePage.tabs.filter(tab => tab.tabName != "Stats" && !ActualTabs.includes(tab)).forEach(tab => tab.render());
-        ActualTabs = Object.values(gamePage.tabs.filter(tab => tab.tabName != "Stats"));
-    }
-    //space render
-    else if(gamePage.tabs[6].GCPanel.children.filter(res => res.model.on == 1).length != gamePage.tabs[6].planetPanels.length){
-        gamePage.tabs[6].render();
-        ActualTabs = Object.values(gamePage.tabs.filter(tab => tab.tabName != "Stats"));
-    }
+function renderNewTabs(){
+  if(gamePage.tabs.filter(tab => tab.tabName != "Stats"  && !actualTabs.includes(tab)).length > 0) {
+    gamePage.tabs.filter(tab => tab.tabName != "Stats" && !actualTabs.includes(tab)).forEach(tab => tab.render());
+    actualTabs = Object.values(gamePage.tabs.filter(tab => tab.tabName != "Stats"));
+  }
+  //space render
+  else if(gamePage.tabs[6].GCPanel.children.filter(res => res.model.on == 1).length != gamePage.tabs[6].planetPanels.length){
+    gamePage.tabs[6].render();
+    actualTabs = Object.values(gamePage.tabs.filter(tab => tab.tabName != "Stats"));
+  }
 }
-
 
 if (gamePage.ironWill){
-    if (gamePage.resPool.get("zebras").value == 0) {
-        gamePage.msg('"Iron Will" mode will be off after 755 game ticks (if not switched)');
-    }
-    else if (!switches["Iron Will"]){
-        autoSwitch('Iron Will',  'IronWill')
-    }
+  if (gamePage.resPool.get("zebras").value == 0) {
+    gamePage.msg('"Iron Will" mode will be off after 755 game ticks (if not switched)');
+  }
+  else if (!switches["Iron Will"]){
+    autoSwitch('Iron Will',  'IronWill')
+  }
 }
 
-
-function SellSpaceAndReset(){
-     if (!gamePage.challenges.anyChallengeActive()) {
-        msg = "Sell all space and Reset?";
-        gamePage.ui.confirm($I("reset.confirmation.title"), msg, function() {
-            let optsell = gamePage.opts.hideSell
-            gamePage.opts.hideSell = false
-            //sell all space
-            if (gamePage.tabs[6].planetPanels.length > 3){
-                gamePage.tabs[6].planetPanels[4].children[1].model.metadata.on = gamePage.tabs[6].planetPanels[4].children[1].model.metadata.val
-            }
-            for (var z = 0; z < gamePage.tabs[6].planetPanels.length; z++) {
-                    var spBuild = gamePage.tabs[6].planetPanels[z].children;
-                    try {
-                        for (var s = 0 ;s < spBuild.length; s++) {
-                            if (spBuild[s].model.metadata.unlocked && spBuild[s].model.metadata.val > 1 && spBuild[s].model.metadata.name != "containmentChamber") {
-                                    spBuild[s].controller.sellInternal(spBuild[s].model,1);
-                                }
-                        }
-
-                    } catch(err) {
-                    console.log(err);
-                    }
-            }
-            gamePage.opts.hideSell = optsell
-            setTimeout(function() { gamePage.resetAutomatic(); }, 10000);
-            console.log("reset will be in 10 sec")
-            $("#PriorityLabel")[0].innerText = "reset will be in 10 sec"
-            clearInterval(runAllAutomation);
+function sellSpaceAndReset() {
+  // Don't allow auto-reset during challenges
+  if (gamePage.challenges.anyChallengeActive()) {
+    gamePage.msg('You are in challenge now, please reset manually.');
+    return;
+  }
+  
+  // Ask for confirmation
+  const confirmMessage = $I("reset.confirmation.title");
+  const msg = "Sell all space and Reset?";
+  
+  gamePage.ui.confirm(confirmMessage, msg, () => {
+    // Save and temporarily disable the sell option setting
+    const originalHideSell = gamePage.opts.hideSell;
+    gamePage.opts.hideSell = false;
+    
+    // Special handling for cryochambers (panel 4, child 1)
+    const spacePanels = gamePage.tabs[6].planetPanels;
+    if (spacePanels.length > 3) {
+      const cryoPanel = spacePanels[4]?.children?.[1];
+      if (cryoPanel?.model?.metadata) {
+        cryoPanel.model.metadata.on = cryoPanel.model.metadata.val;
+      }
+    }
+    
+    // Sell all space buildings except containment chambers
+    try {
+      spacePanels.forEach(panel => {
+        const spaceBuildings = panel.children || [];
+        
+        spaceBuildings.forEach(building => {
+          const metadata = building.model?.metadata;
+          
+          if (metadata?.unlocked && 
+              metadata.val > 1 && 
+              metadata.name !== "containmentChamber") {
+            building.controller.sellInternal(building.model, 1);
+          }
         });
-     }
-     else {
-         gamePage.msg('You are in challenge now, please reset manually.');
-     }
+      });
+    } catch (error) {
+      console.error("Error while selling space buildings:", error);
+    }
+    
+    // Restore original sell option setting
+    gamePage.opts.hideSell = originalHideSell;
+    
+    // Schedule reset and provide user feedback
+    const resetDelay = 10000; // 10 seconds
+    console.log(`Reset will happen in ${resetDelay/1000} seconds`);
+    
+    if ($("#PriorityLabel").length) {
+      $("#PriorityLabel").text(`Reset will happen in ${resetDelay/1000} seconds`);
+    }
+    
+    // Stop automation before reset
+    if (typeof runAllAutomation !== 'undefined') {
+      clearInterval(runAllAutomation);
+    }
+    
+    // Perform the reset after delay
+    setTimeout(() => gamePage.resetAutomatic(), resetDelay);
+  });
 }
 
 function LabelMsg(){
-    GlobalMsg['chronosphere'] = ''
-    if (gamePage.bld.getBuildingExt('chronosphere').meta.val < 10 && gamePage.bld.getBuildingExt('chronosphere').meta.unlocked && gamePage.resPool.get("unobtainium").value > 0  && gamePage.resPool.get("timeCrystal").value > 0){
-        GlobalMsg['chronosphere'] = gamePage.bld.getBuildingExt('chronosphere').meta.label + '(1-10) ' +  Math.min(Math.round((gamePage.resPool.get("timeCrystal").value/Chronosphere10SummPrices()["timeCrystal"])*100),Math.round((gamePage.resPool.get("unobtainium").value/Chronosphere10SummPrices()["unobtainium"])*100)) + '%';
+  GlobalMsg['chronosphere'] = ''
+  if (gamePage.bld.getBuildingExt('chronosphere').meta.val < 10 && gamePage.bld.getBuildingExt('chronosphere').meta.unlocked && gamePage.resPool.get("unobtainium").value > 0  && gamePage.resPool.get("timeCrystal").value > 0){
+    GlobalMsg['chronosphere'] = gamePage.bld.getBuildingExt('chronosphere').meta.label + '(1-10) ' +  Math.min(Math.round((gamePage.resPool.get("timeCrystal").value/calculateChronosphere10Prices()["timeCrystal"])*100),Math.round((gamePage.resPool.get("unobtainium").value/calculateChronosphere10Prices()["unobtainium"])*100)) + '%';
+  }
+
+  let gmsgarr = []
+  for (let key of Object.keys(GlobalMsg)) {
+    if (GlobalMsg[key]) {
+      gmsgarr.push(GlobalMsg[key]);
     }
-
-
-   let gmsgarr = []
-   for (let key of Object.keys(GlobalMsg)) {
-     if (GlobalMsg[key]) {
-        gmsgarr[gmsgarr.length] = GlobalMsg[key]
-     }
-   }
-   $("#PriorityLabel")[0].innerText =  gmsgarr.join(' / ')
+  }
+  $("#PriorityLabel")[0].innerText =  gmsgarr.join(' / ')
 }
 
-function Chronosphere10SummPrices() {
-	 	var bldPrices = gamePage.bld.getBuildingExt('chronosphere').get('prices');
-		var ratio = gamePage.bld.getPriceRatioWithAccessor(gamePage.bld.getBuildingExt('chronosphere'));
-
-		var prices = {};
-        var sumVal = 0;
-
-		for (var cr = 0; cr< bldPrices.length; cr++){
-		    sumVal = 0;
-		    for (var g = gamePage.bld.getBuildingExt('chronosphere').meta.val; g <= Math.max(gamePage.bld.getBuildingExt('chronosphere').meta.val,9); g++){
-		        sumVal+= bldPrices[cr].val * Math.pow(ratio, g)
-		    }
-
-            prices[bldPrices[cr].name] = sumVal
-		}
-	    return prices;
+/**
+ * Calculates the cumulative prices for building 10 Chronospheres from current level
+ * @returns {Object} An object mapping resource names to their total cost
+ */
+function calculateChronosphere10Prices() {
+  // Get the Chronosphere building reference once
+  const chronosphere = gamePage.bld.getBuildingExt('chronosphere');
+  
+  // Get the current level and price information
+  const currentLevel = chronosphere.meta.val;
+  const basePrices = chronosphere.get('prices');
+  const priceRatio = gamePage.bld.getPriceRatioWithAccessor(chronosphere);
+  
+  // Calculate the target level (current + 10, or at least 10)
+  const targetLevel = Math.max(currentLevel + 9, 10); // +9 because we're calculating 10 buildings including current level
+  
+  // Initialize the results object
+  const totalPrices = {};
+  
+  // Calculate the cost for each resource
+  basePrices.forEach(resource => {
+    let totalCost = 0;
+    
+    // Sum up the costs from current level to target level
+    for (let level = currentLevel; level <= targetLevel; level++) {
+      totalCost += resource.val * Math.pow(priceRatio, level);
+    }
+    
+    totalPrices[resource.name] = totalCost;
+  });
+  
+  return totalPrices;
 }
-
-
-
 
 gamePage.tabs.filter(tab => tab.tabId != "Stats" ).forEach(tab => tab.render());
 
@@ -4402,19 +4469,19 @@ var runAllAutomation = setInterval(function() {
         }
 
          if (gamePage.timer.ticksTotal % 50 === 0) {
-             setTimeout(ResearchSolarRevolution, 0);
+             setTimeout(researchSolarRevolution, 0);
              setTimeout(upgradeBuildings, 1);
 
         }
 
         if (gamePage.timer.ticksTotal % 151 === 0) {
-            setTimeout(RenderNewTabs, 1);
+            setTimeout(renderNewTabs, 1);
         }
         if (gamePage.timer.ticksTotal % 11 === 0) {
             setTimeout(autozig, 0);
         }
         if (gamePage.timer.ticksTotal % 755 === 0) {
-            setTimeout(Service, 2);
+            setTimeout(service, 2);
         }
     }
 
