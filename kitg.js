@@ -357,7 +357,7 @@ function autoBuild() {
       else if (shouldBuildChronosphere(metadata)) {
         buyBuilding(building, controller, model);
       }
-      else if (gameState.ironWill || (gamePage.resPool.get("burnedParagon").value + gamePage.resPool.get("paragon") == 0 && (gamePage.tabs[0].children.length < 3 || gamePage.tabs[0].children[2].metadata.val < 30))) {
+      else if (gameState.ironWill || (gamePage.resPool.get("burnedParagon").value + gamePage.resPool.get("paragon") == 0 && (gamePage.tabs[0].children.length < 3 || gamePage.tabs[0].children[2].model.metadata.val < 30))) {
         if (shouldBuildInIronWill(metadata, prices, gameState)) {
           buyBuilding(building, controller, model);
         }
