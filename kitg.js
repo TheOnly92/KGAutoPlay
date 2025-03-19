@@ -3554,22 +3554,48 @@ function energyControl() {
   }
 }
 
+/**
+ * Automatically gathers catnip when certain game conditions are met
+ * - Less than 40 huts
+ * - Low catnip reserves (less than 100)
+ * - Limited gathering clicks or Iron Will mode active
+ */
 function autoNip() {
-		if (gamePage.bld.buildingsData[0].val < 40 && gamePage.resPool.get('catnip').value < 100 && (gamePage.gatherClicks  < 2500 || gamePage.ironWill )) {
-		    btn = gamePage.tabs[0].children[0];
-			try {
-				btn.controller.buyItem(btn.model, {}, function(result) {
-					if (result) {
-                        if (gamePage.timer.ticksTotal % 151 === 0){
-                            gamePage.msg('Gathering catnip');
-                        }
-					}
-					});
-			} catch(err) {
-			console.log(err);
-			}
-		}
+  const CATNIP_THRESHOLD = 100;
+  const HUT_THRESHOLD = 40;
+  const CLICK_THRESHOLD = 2500;
+  const MESSAGE_INTERVAL = 150;
+  
+  // Check if gathering conditions are met
+  const hutCount = gamePage.bld.buildingsData[0].val;
+  const catnipAmount = gamePage.resPool.get('catnip').value;
+  const clickCount = gamePage.gatherClicks;
+  const isIronWillActive = gamePage.ironWill;
+  
+  const shouldGather = 
+    hutCount < HUT_THRESHOLD && 
+    catnipAmount < CATNIP_THRESHOLD && 
+    (clickCount < CLICK_THRESHOLD || isIronWillActive);
+  
+  if (!shouldGather) {
+    return;
+  }
+  
+  // Get the gather button from the first tab's first child
+  const gatherButton = gamePage.tabs[0].children[0];
+  
+  try {
+    // Attempt to click the gather button
+    gatherButton.controller.buyItem(gatherButton.model, {}, (result) => {
+      if (result && gamePage.timer.ticksTotal % MESSAGE_INTERVAL === 0) {
+        gamePage.msg('Gathering catnip');
+      }
+    });
+  } catch (error) {
+    console.error('Error while gathering catnip:', error);
+  }
 }
+
 function autoRefine() {
     if ((gamePage.village.getKittens() < 14 || !gamePage.workshopTab.visible) && ((!gamePage.challenges.isActive("winterIsComing") || gamePage.bld.getBuildingExt('hut').meta.val == 0) && gamePage.bld.getBuildingExt('field').meta.unlocked && gamePage.resPool.get('catnip').value > gamePage.resPool.get('wood').value * 5  && gamePage.resPool.get('catnip').value > Math.min(gamePage.resPool.get('catnip').maxValue * 0.9, (gamePage.calendar.season >= 1 ? Math.max(gamePage.tabs[0].children[2].model.prices.filter(res => res.name == "catnip")[0].val * 2, 100) : 100)))) {
         if (!gamePage.workshopTab.visible ){
