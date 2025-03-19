@@ -106,7 +106,7 @@ function purchaseReligionUpgrades() {
     const upgrade = availableUpgrades[i];
     if (upgrade.model.enabled && upgrade.model.visible) {
       try {
-        upgrade.controller.buyItem(upgrade.model, {}, function(result) {
+        upgrade.controller.buyItem(upgrade.model, function(result) {
           if (result) {
             upgrade.update();
             gamePage.msg('Religion researched: ' + upgrade.model.name);
@@ -222,7 +222,7 @@ function purchaseCryptotheology() {
     const upgrade = cryptoButtons[i];
     if (upgrade.model.enabled && upgrade.model.visible) {
       try {
-        upgrade.controller.buyItem(upgrade.model, {}, function(result) {
+        upgrade.controller.buyItem(upgrade.model, function(result) {
           if (result) {
             upgrade.update();
             gamePage.msg('Religion Cryptotheology researched: ' + upgrade.model.name);
@@ -258,7 +258,7 @@ function handlePacts() {
         const pact = cleansing[i];
         if (pact.model.enabled && pact.model.visible) {
           try {
-            pact.controller.buyItem(pact.model, {}, function(result) {
+            pact.controller.buyItem(pact.model, function(result) {
               if (result) {
                 pact.update();
                 gamePage.msg('Religion Pact accepted: ' + pact.model.name);
@@ -284,7 +284,7 @@ function handlePacts() {
     )[0];
 
     try {
-      payDebt.controller.buyItem(payDebt.model, {}, function(result) {
+      payDebt.controller.buyItem(payDebt.model, function(result) {
         if (result) {
           payDebt.update();
           gamePage.msg('Religion : ' + payDebt.model.name);
@@ -527,7 +527,7 @@ function shouldBuildInIronWill(metadata, prices, gameState) {
  * Purchases a building and logs the action
  */
 function buyBuilding(building, controller, model) {
-  controller.buyItem(model, {}, function(result) {
+  controller.buyItem(model, function(result) {
     if (result) {
       building.update();
       gamePage.msg('Build: ' + building.model.name);
@@ -575,7 +575,7 @@ function buildSpaceBuildings() {
         }
 
         // Buy the building
-        building.controller.buyItem(building.model, {}, function(result) {
+        building.controller.buyItem(building.model, function(result) {
           if (result) {
             building.update();
             gamePage.msg('Build in Space: ' + building.model.name);
@@ -662,7 +662,7 @@ function buildSpacePrograms() {
 
     if (program.model.metadata.unlocked && program.model.on === 0) {
       try {
-        program.controller.buyItem(program.model, {}, function(result) {
+        program.controller.buyItem(program.model, function(result) {
           if (result) {
             program.update();
             gamePage.msg('Research Space program: ' + program.model.name);
@@ -862,7 +862,6 @@ function buildEmbassies() {
 
     lowestEmbassyRace.embassyButton.controller.buyItem(
       lowestEmbassyRace.embassyButton.model,
-      {},
       result => {
         if (result) {
           lowestEmbassyRace.embassyButton.update();
@@ -2391,7 +2390,7 @@ function researchPolicies() {
  */
 function tryResearch(button, messagePrefix) {
   try {
-    button.controller.buyItem(button.model, {}, function(result) {
+    button.controller.buyItem(button.model, function(result) {
       if (result) {
         button.update();
         gamePage.msg(`${messagePrefix}: ${button.model.name}`);
@@ -2452,7 +2451,7 @@ function autoWorkshop() {
 
     // Try to purchase the upgrade
     try {
-      upgrade.controller.buyItem(upgrade.model, {}, result => {
+      upgrade.controller.buyItem(upgrade.model, result => {
         if (result) {
           upgrade.update();
           gamePage.msg('Upgraded: ' + upgrade.model.name);
@@ -2693,7 +2692,6 @@ function handleTimeCrystalRefinement(religionTab, resPool) {
     // Buy single TC refinement
     religionTab.refineTCBtn.controller.buyItem(
       religionTab.refineTCBtn.model,
-      {},
       function(result) {
         if (result) {
           religionTab.refineTCBtn.update();
@@ -2774,7 +2772,7 @@ function handleZigguratUpgrades(religionTab, resPool) {
     }
 
     try {
-      btn.controller.buyItem(btn.model, {}, function(result) {
+      btn.controller.buyItem(btn.model, function(result) {
         if (result) {
           btn.update();
           gamePage.msg('Build in Ziggurats: ' + btn.model.name);
@@ -2802,7 +2800,6 @@ function handleTearRefinement(religionTab, resPool) {
     try {
       religionTab.refineBtn.controller.buyItem(
         religionTab.refineBtn.model,
-        {},
         function(result) {
           if (result) {
             gamePage.msg('Refine tears: BLS(' + Math.trunc(sorrowResource.value) + ')');
@@ -3590,7 +3587,7 @@ function autoNip() {
 
   try {
     // Attempt to click the gather button
-    gatherButton.controller.buyItem(gatherButton.model, {}, (result) => {
+    gatherButton.controller.buyItem(gatherButton.model, (result) => {
       if (result && gamePage.timer.ticksTotal % MESSAGE_INTERVAL === 0) {
         gamePage.msg('Gathering catnip');
       }
@@ -3642,7 +3639,7 @@ function autoRefine() {
     }
     else if (field.model.resourceIsLimited && bonfire.model.visible) {
       // Refine once
-      bonfire.controller.buyItem(bonfire.model, {}, () => {});
+      bonfire.controller.buyItem(bonfire.model, () => {});
     }
     else {
       // Calculate optimal refining limit
@@ -3655,7 +3652,7 @@ function autoRefine() {
       for (let i = 0; i < refineLimit; i++) {
         if (bonfire.model.enabled) {
           try {
-            bonfire.controller.buyItem(bonfire.model, {}, () => {});
+            bonfire.controller.buyItem(bonfire.model, () => {});
           } catch (err) {
             console.log(err);
             break;
@@ -4081,7 +4078,6 @@ function researchSolarRevolution() {
     try {
       solarRevolutionButton.controller.buyItem(
         solarRevolutionButton.model,
-        {},
         result => {
           if (result) {
             solarRevolutionButton.update();
@@ -4219,7 +4215,7 @@ function buildCryochamberIfAffordable(voidBuilds, voidCf) {
   // The costCheck scales with the number of active items at index 2.
   const costCheck = Math.max(500, voidBuilds[2].model.on * 20);
   if (costCheck <= voidCf * VOID_COST_RATIO_THRESHOLD) {
-    cryoChamber.controller.buyItem(cryoChamber.model, {}, result => {
+    cryoChamber.controller.buyItem(cryoChamber.model, result => {
       if (result) {
         gamePage.msg(CRYOCHAMBER_FIXED_MSG);
       }
@@ -4248,7 +4244,7 @@ function buildVoidItem1IfAffordable(voidBuilds, voidCf) {
   }
 
   // Otherwise, purchase it.
-  item1.controller.buyItem(item1.model, {}, result => {
+  item1.controller.buyItem(item1.model, result => {
     if (result) {
       item1.update();
       gamePage.msg(BUILD_IN_TIME_MSG_PREFIX + item1.model.name);
@@ -4321,7 +4317,7 @@ function handleOtherVoidBuildings(buildingBtn, index, voidBuilds, voidCf) {
  * in the log if it was bought successfully.
  */
 function buyAndNotify(buildingBtn) {
-  buildingBtn.controller.buyItem(buildingBtn.model, {}, result => {
+  buildingBtn.controller.buyItem(buildingBtn.model, result => {
     if (result) {
       buildingBtn.update();
       gamePage.msg(BUILD_IN_TIME_MSG_PREFIX + buildingBtn.model.name);
@@ -4695,7 +4691,7 @@ function attemptMultiYearSkips(chronoforge, tcVal, factor) {
     (heatMax - heat) > (skip1Cost * factor)
   ) {
     try {
-      shatterBtn.controller.buyItem(shatterBtn.model, {}, function(result) {
+      shatterBtn.controller.buyItem(shatterBtn.model, function(result) {
         if (result) {
           shatterBtn.update();
         }
@@ -4750,7 +4746,7 @@ function handleChronoforgeItemPurchase(chronoforge, t) {
   }
 
   // Otherwise, buy it and notify the user via the message log.
-  cfItem.controller.buyItem(cfItem.model, {}, function(result) {
+  cfItem.controller.buyItem(cfItem.model, function(result) {
     if (result) {
       cfItem.update();
       gamePage.msg(BUILD_IN_TIME_MSG_PREFIX + cfItem.model.name);
