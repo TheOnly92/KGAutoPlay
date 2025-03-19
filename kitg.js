@@ -6,12 +6,9 @@ var GlobalMsg = {'craft':'','tech':'','relicStation':'','solarRevolution':'','re
 var switches = {"Energy Control":true, "Iron Will":false, "CollectResBReset":false}
 
 var htmlMenuAddition = '<div id="farRightColumn" class="column">' +
-
 '<a id="scriptOptions" onclick="selectOptions()"> | KGAutoPlay </a>' +
-
 '<div id="optionSelect" style="display:none; margin-top:-235px; margin-left:-60px; width:200px" class="dialog help">' +
 '<a href="#" onclick="clearOptionHelpDiv();" style="position: absolute; top: 10px; right: 15px;">close</a>' +
-
 '<button id="killSwitch" onclick="clearInterval(clearScript()); gamePage.msg(deadScript);">Kill Switch</button> </br>' +
 '<hr size=5>' +
 '<button id="autoEnergy" style="color:black" onclick="autoSwitch(\'Energy Control\',  \'autoEnergy\')"> Energy Control </button></br>' +
@@ -3668,119 +3665,380 @@ function autoRefine() {
   }
 }
 
-function upgradeByModel(target){
-	var metadataRaw = target.controller.getMetadataRaw(target.model);
+/**
+ * Upgrades a building to its next stage
+ * @param {Object} target - The building target object
+ */
+function upgradeByModel(target) {
+    const metadataRaw = target.controller.getMetadataRaw(target.model);
+    
+    // Initialize stage if needed and increment
     metadataRaw.stage = metadataRaw.stage || 0;
     metadataRaw.stage++;
 
+    // Reset values
     metadataRaw.val = 0;
     metadataRaw.on = 0;
-    if (metadataRaw.calculateEffects){
+    
+    // Calculate effects if method exists
+    if (metadataRaw.calculateEffects) {
         metadataRaw.calculateEffects(metadataRaw, target.controller.game);
     }
+    
+    // Apply upgrades and render
     target.controller.game.upgrade(metadataRaw.upgrades);
     target.controller.game.render();
 }
 
-var postApocalypse_is_competed = true;
+// Track post-apocalypse challenge completion
+let postApocalypseIsCompleted = true;
 
-function UpgradeBuildings() {
-    if (gamePage.diplomacy.hasUnlockedRaces()){
-        gamePage.diplomacy.unlockRandomRace();
+/**
+ * Main function to manage building upgrades and automation
+ */
+function upgradeBuildings() {
+    const game = gamePage;
+    
+    // Unlock random race if diplomatic options available
+    if (game.diplomacy.hasUnlockedRaces()) {
+        game.diplomacy.unlockRandomRace();
     }
-    if (gamePage.bld.getBuildingExt('reactor').meta.unlocked && !gamePage.bld.getBuildingExt('reactor').meta.isAutomationEnabled && gamePage.bld.getBuildingExt('reactor').meta.val > 0 && gamePage.workshop.get("thoriumReactors").researched && gamePage.resPool.get('thorium').value > 10000 && gamePage.resPool.get('uranium').perTickCached > 250) {
-        gamePage.bld.getBuildingExt('reactor').meta.isAutomationEnabled = true
-    }
+    
+    // Enable reactor automation when conditions are met
+    enableReactorAutomationIfReady();
+    
+    // Upgrade buildings that are ready for next stage
+    upgradeReadyBuildings();
+    
+    // Manage building activations
+    manageProducingBuildings();
+    
+    // Handle apocalypse challenge specific logic
+    handleApocalypseChallengeLogic();
+}
 
-    var mblds = gamePage.bld.meta[0].meta.filter(res => res.stages && res.stages[1].stageUnlocked && res.stage == 0 && (res.name != "library" || (gamePage.space.getProgram("orbitalLaunch").val == 1 && !gamePage.challenges.isActive("energy") && gamePage.bld.getBuildingExt('aqueduct').meta.stage != 0)) && (res.name != "aqueduct" || (!gamePage.challenges.isActive("winterIsComing") && ((gamePage.resPool.get('paragon').value > 200 && gamePage.bld.getBuildingExt('accelerator').meta.val > 2) || (gamePage.resPool.get('paragon').value <= 200 && gamePage.space.getBuilding('hydroponics').val > 0) )) ) && (res.name != "warehouse" || (gamePage.resPool.get("eludium").value >= 200000 && gamePage.time.getCFU("ressourceRetrieval").val > 3)) );
-    var upgradeTarget;
-    for (var up = 0; up < mblds.length; up++) {
-        upgradeTarget = gamePage.tabs[0].children.find(res => res.model.metadata && res.model.metadata.name == mblds[up].name);
+/**
+ * Enables reactor automation when conditions are met
+ */
+function enableReactorAutomationIfReady() {
+    const game = gamePage;
+    const reactor = game.bld.getBuildingExt('reactor').meta;
+    
+    if (reactor.unlocked && 
+        !reactor.isAutomationEnabled && 
+        reactor.val > 0 && 
+        game.workshop.get("thoriumReactors").researched && 
+        game.resPool.get('thorium').value > 10000 && 
+        game.resPool.get('uranium').perTickCached > 250) {
+        
+        reactor.isAutomationEnabled = true;
+    }
+}
+
+/**
+ * Finds and upgrades buildings that are ready for their next stage
+ */
+function upgradeReadyBuildings() {
+    const game = gamePage;
+    
+    // Filter for buildings ready to upgrade
+    const buildingsToUpgrade = game.bld.meta[0].meta.filter(building => 
+        building.stages && 
+        building.stages[1].stageUnlocked && 
+        building.stage === 0 && 
+        isReadyForUpgrade(building)
+    );
+    
+    // Upgrade each ready building
+    for (const building of buildingsToUpgrade) {
+        const upgradeTarget = game.tabs[0].children.find(
+            res => res.model.metadata && res.model.metadata.name === building.name
+        );
         upgradeByModel(upgradeTarget);
     }
+}
 
-    if (!gamePage.challenges.isActive("postApocalypse") && gamePage.bld.getBuildingExt('steamworks').meta.on < gamePage.bld.getBuildingExt('steamworks').meta.val && gamePage.resPool.get('coal').value > 0 && gamePage.bld.getBuildingExt('steamworks').meta.unlocked) {
-        gamePage.bld.getBuildingExt('steamworks').meta.on = gamePage.bld.getBuildingExt('steamworks').meta.val;
+/**
+ * Determines if a building is ready for upgrade based on specific conditions
+ * @param {Object} building - The building to evaluate
+ * @returns {boolean} Whether the building is ready for upgrade
+ */
+function isReadyForUpgrade(building) {
+    const game = gamePage;
+    
+    // Library upgrade conditions
+    if (building.name === "library") {
+        return game.space.getProgram("orbitalLaunch").val === 1 && 
+               !game.challenges.isActive("energy") && 
+               game.bld.getBuildingExt('aqueduct').meta.stage !== 0;
     }
-    if (gamePage.bld.getBuildingExt('reactor').meta.on < gamePage.bld.getBuildingExt('reactor').meta.val && gamePage.resPool.get('uranium').value > 100 && gamePage.bld.getBuildingExt('reactor').meta.unlocked) {
-        gamePage.bld.getBuildingExt('reactor').meta.on = gamePage.bld.getBuildingExt('reactor').meta.val;
+    
+    // Aqueduct upgrade conditions
+    if (building.name === "aqueduct") {
+        return !game.challenges.isActive("winterIsComing") && 
+               ((game.resPool.get('paragon').value > 200 && game.bld.getBuildingExt('accelerator').meta.val > 2) || 
+                (game.resPool.get('paragon').value <= 200 && game.space.getBuilding('hydroponics').val > 0));
     }
-    if (!gamePage.challenges.isActive("postApocalypse")  && gamePage.bld.getBuildingExt('magneto').meta.on < gamePage.bld.getBuildingExt('magneto').meta.val && gamePage.resPool.get('oil').value > 0 && gamePage.bld.getBuildingExt('magneto').meta.unlocked) {
-        gamePage.bld.getBuildingExt('magneto').meta.on = gamePage.bld.getBuildingExt('magneto').meta.val;
+    
+    // Warehouse upgrade conditions
+    if (building.name === "warehouse") {
+        return game.resPool.get("eludium").value >= 200000 && 
+               game.time.getCFU("ressourceRetrieval").val > 3;
     }
-    if (gamePage.space.getBuilding("moonOutpost").unlocked && !gamePage.challenges.isActive("energy")){
-        if (gamePage.space.getBuilding("moonOutpost").on < gamePage.space.getBuilding("moonOutpost").val && gamePage.resPool.get('uranium').value > 1000 && gamePage.resPool.get('unobtainium').value < gamePage.resPool.get('unobtainium').maxValue){
-            gamePage.space.getBuilding("moonOutpost").on = gamePage.space.getBuilding("moonOutpost").val
-        }else if (gamePage.space.getBuilding("moonOutpost").on > 0 && (gamePage.resPool.get('uranium').value <= 1000 || gamePage.resPool.get('unobtainium').value >= gamePage.resPool.get('unobtainium').maxValue)){
-            gamePage.space.getBuilding("moonOutpost").on--;
-        }
-    }
-    if (gamePage.bld.getBuildingExt('smelter').meta.unlocked && (!gamePage.challenges.isActive("postApocalypse") || gamePage.village.getKittens() < 10)){
-        if (((gamePage.ironWill && gamePage.diplomacy.get('nagas').unlocked && gamePage.resPool.get('gold').unlocked &&  gamePage.resPool.get('minerals').value / 100 > gamePage.bld.getBuildingExt('smelter').meta.on ) || (gamePage.ironWill && ((gamePage.workshop.get("goldOre").researched && gamePage.bld.getBuildingExt('amphitheatre').meta.val > 3) || gamePage.resPool.get('iron').value < 100 ))) || ((gamePage.calcResourcePerTick('wood') + gamePage.getResourcePerTickConvertion('wood') + gamePage.bld.getBuildingExt('smelter').meta.effects.woodPerTickCon +  gamePage.calcResourcePerTick('wood') * gamePage.prestige.getParagonProductionRatio()) * 5 > gamePage.bld.getBuildingExt('smelter').meta.on  && ( gamePage.calcResourcePerTick('minerals') + gamePage.getResourcePerTickConvertion('minerals')  + gamePage.bld.getBuildingExt('smelter').meta.effects.mineralsPerTickCon + gamePage.calcResourcePerTick('minerals') * gamePage.prestige.getParagonProductionRatio()) * 5 > gamePage.bld.getBuildingExt('smelter').meta.on)) {
-                if (gamePage.ironWill) {
-                    if (gamePage.bld.getBuildingExt('smelter').meta.val >= gamePage.bld.getBuildingExt('smelter').meta.on){
-                        gamePage.bld.getBuildingExt('smelter').meta.on= Math.min(Math.floor(gamePage.resPool.get('minerals').value / 100), gamePage.bld.getBuildingExt('smelter').meta.val);
-                        gamePage.bld.getBuildingExt('calciner').meta.on= Math.min(Math.max(Math.floor(gamePage.resPool.get('coal').value /(gamePage.resPool.get('coal').maxValue / gamePage.bld.getBuildingExt('calciner').meta.val)),1), Math.floor(gamePage.resPool.get('minerals').value / 1000), gamePage.bld.getBuildingExt('calciner').meta.val);
-                    }
-                }
-                else if (gamePage.bld.getBuildingExt('smelter').meta.val > gamePage.bld.getBuildingExt('smelter').meta.on){
-                    gamePage.bld.getBuildingExt('smelter').meta.on++;
-                }
-        }
-        else if (gamePage.bld.getBuildingExt('smelter').meta.on > 0) {
-            if (gamePage.ironWill) {
-                if (gamePage.bld.getBuildingExt('amphitheatre').meta.val > 3){
-                    gamePage.bld.getBuildingExt('smelter').meta.on= Math.min(Math.floor(gamePage.resPool.get('minerals').value / 100), gamePage.bld.getBuildingExt('smelter').meta.on--);
-                    gamePage.bld.getBuildingExt('calciner').meta.on= Math.min(Math.max(Math.floor(gamePage.resPool.get('coal').value /(gamePage.resPool.get('coal').maxValue / gamePage.bld.getBuildingExt('calciner').meta.val)),1), Math.floor(gamePage.resPool.get('minerals').value / 1000), gamePage.bld.getBuildingExt('calciner').meta.val);
-                }
-                else {
-                    gamePage.bld.getBuildingExt('smelter').meta.on= 0;
-                }
-            }
-            else if (gamePage.religion.getRU('solarRevolution').val == 0){
-                gamePage.bld.getBuildingExt('smelter').meta.on--;
-            }
-        }
-    }
-    if (gamePage.resPool.get('paragon').value < 200 && gamePage.bld.getBuildingExt("mint").meta.val > 1 && gamePage.calendar.year < 2000){
-        if (gamePage.resPool.get('manpower').value > gamePage.bld.getBuildingExt("mint").meta.on * (gamePage.resPool.get('manpower').maxValue / gamePage.bld.getBuildingExt("mint").meta.val) ){
-            if (gamePage.bld.getBuildingExt("mint").meta.on < gamePage.bld.getBuildingExt("mint").meta.val){
-                gamePage.bld.getBuildingExt('mint').meta.on++;
-            }
-        }
-        else {
-            if (gamePage.bld.getBuildingExt("mint").meta.on > 1){
-                gamePage.bld.getBuildingExt('mint').meta.on--;
-            }
-        }
-    } else if (gamePage.bld.getBuildingExt("mint").meta.on != gamePage.bld.getBuildingExt("mint").meta.val){
-        gamePage.bld.getBuildingExt('mint').meta.on = gamePage.bld.getBuildingExt('mint').meta.val
-    }
+    
+    return true;
+}
 
-    if (gamePage.challenges.isActive("postApocalypse") && gamePage.time.getCFU("ressourceRetrieval").val > 0 && (gamePage.calendar.cycle != 5 || (gamePage.calendar.day <= 10 || gamePage.calendar.day >= 90))){
-        gamePage.bld.getBuildingExt('mine').meta.on = 0;
-        gamePage.bld.getBuildingExt('quarry').meta.on = 0;
-        gamePage.bld.getBuildingExt('calciner').meta.on = 0;
-        gamePage.bld.getBuildingExt('steamworks').meta.on = 0;
-        gamePage.bld.getBuildingExt('magneto').meta.on = 0;
-        gamePage.bld.getBuildingExt('oilWell').meta.isAutomationEnabled = false;
-        if (gamePage.workshop.get("geodesy").researched){
-            gamePage.bld.getBuildingExt('smelter').meta.on = 0;
+/**
+ * Manages activation state of various production buildings
+ */
+function manageProducingBuildings() {
+    const game = gamePage;
+    const isPostApocalypse = game.challenges.isActive("postApocalypse");
+    
+    // Steamworks management
+    manageBuildingPower('steamworks', !isPostApocalypse && game.resPool.get('coal').value > 0);
+    
+    // Reactor management
+    manageBuildingPower('reactor', game.resPool.get('uranium').value > 100);
+    
+    // Magneto management
+    manageBuildingPower('magneto', !isPostApocalypse && game.resPool.get('oil').value > 0);
+    
+    // Moon outpost management
+    manageSpaceBuildingPower();
+    
+    // Smelter management
+    manageSmelterPower();
+    
+    // Mint management
+    manageMintPower();
+}
+
+/**
+ * Manages power for standard buildings
+ * @param {string} buildingName - Name of the building
+ * @param {boolean} condition - Condition for turning on
+ */
+function manageBuildingPower(buildingName, condition) {
+    const game = gamePage;
+    const building = game.bld.getBuildingExt(buildingName).meta;
+    
+    if (building.unlocked) {
+        if (condition && building.on < building.val) {
+            building.on = building.val;
+        } else if (!condition && building.on > 0 && buildingName !== 'reactor') {
+            building.on--;
         }
-        postApocalypse_is_competed = false;
     }
-    if ((!postApocalypse_is_competed  && !gamePage.challenges.isActive("postApocalypse")) || (gamePage.challenges.isActive("postApocalypse")  && gamePage.time.getCFU("ressourceRetrieval").val > 0 && gamePage.calendar.cycle == 5 && gamePage.calendar.day > 10 && gamePage.calendar.day < 90)){
-        gamePage.bld.getBuildingExt('mine').meta.on = gamePage.bld.getBuildingExt('mine').meta.val;
-        gamePage.bld.getBuildingExt('quarry').meta.on =  gamePage.bld.getBuildingExt('quarry').meta.val;
-        gamePage.bld.getBuildingExt('calciner').meta.on =  gamePage.bld.getBuildingExt('calciner').meta.val;
-        gamePage.bld.getBuildingExt('smelter').meta.on =  gamePage.bld.getBuildingExt('smelter').meta.val;
-        gamePage.bld.getBuildingExt('steamworks').meta.on =  gamePage.bld.getBuildingExt('steamworks').meta.val;
-        gamePage.bld.getBuildingExt('magneto').meta.on = gamePage.bld.getBuildingExt('magneto').meta.val
-        gamePage.bld.getBuildingExt('oilWell').meta.isAutomationEnabled = true;
-        if (!postApocalypse_is_competed  && !gamePage.challenges.isActive("postApocalypse")){
-            postApocalypse_is_competed = true;
+}
+
+/**
+ * Manages power for space buildings
+ */
+function manageSpaceBuildingPower() {
+    const game = gamePage;
+    const moonOutpost = game.space.getBuilding("moonOutpost");
+    
+    if (moonOutpost.unlocked && !game.challenges.isActive("energy")) {
+        if (moonOutpost.on < moonOutpost.val && 
+            game.resPool.get('uranium').value > 1000 && 
+            game.resPool.get('unobtainium').value < game.resPool.get('unobtainium').maxValue) {
+            
+            moonOutpost.on = moonOutpost.val;
+        } else if (moonOutpost.on > 0 && 
+                  (game.resPool.get('uranium').value <= 1000 || 
+                   game.resPool.get('unobtainium').value >= game.resPool.get('unobtainium').maxValue)) {
+            
+            moonOutpost.on--;
         }
     }
+}
+
+/**
+ * Manages smelter power based on complex resource calculations
+ */
+function manageSmelterPower() {
+    const game = gamePage;
+    const smelter = game.bld.getBuildingExt('smelter').meta;
+    
+    if (!smelter.unlocked || 
+        (game.challenges.isActive("postApocalypse") && game.village.getKittens() >= 10)) {
+        return;
+    }
+    
+    const shouldIncreaseSmelters = determineSmelterIncrease();
+    
+    if (shouldIncreaseSmelters) {
+        if (game.ironWill) {
+            if (smelter.val >= smelter.on) {
+                smelter.on = Math.min(Math.floor(game.resPool.get('minerals').value / 100), smelter.val);
+                
+                const calciner = game.bld.getBuildingExt('calciner').meta;
+                calciner.on = Math.min(
+                    Math.max(
+                        Math.floor(game.resPool.get('coal').value / (game.resPool.get('coal').maxValue / calciner.val)), 
+                        1
+                    ), 
+                    Math.floor(game.resPool.get('minerals').value / 1000), 
+                    calciner.val
+                );
+            }
+        } else if (smelter.val > smelter.on) {
+            smelter.on++;
+        }
+    } else if (smelter.on > 0) {
+        if (game.ironWill) {
+            if (game.bld.getBuildingExt('amphitheatre').meta.val > 3) {
+                smelter.on = Math.min(
+                    Math.floor(game.resPool.get('minerals').value / 100), 
+                    smelter.on - 1
+                );
+                
+                const calciner = game.bld.getBuildingExt('calciner').meta;
+                calciner.on = Math.min(
+                    Math.max(
+                        Math.floor(game.resPool.get('coal').value / (game.resPool.get('coal').maxValue / calciner.val)), 
+                        1
+                    ), 
+                    Math.floor(game.resPool.get('minerals').value / 1000), 
+                    calciner.val
+                );
+            } else {
+                smelter.on = 0;
+            }
+        } else if (game.religion.getRU('solarRevolution').val == 0) {
+            smelter.on--;
+        }
+    }
+}
+
+/**
+ * Determines if smelters should be increased based on resource conditions
+ * @returns {boolean} Whether to increase smelters
+ */
+function determineSmelterIncrease() {
+    const game = gamePage;
+    
+    // Iron will specific logic
+    if (game.ironWill) {
+        return (
+            (game.diplomacy.get('nagas').unlocked && 
+             game.resPool.get('gold').unlocked && 
+             game.resPool.get('minerals').value / 100 > game.bld.getBuildingExt('smelter').meta.on) ||
+            ((game.workshop.get("goldOre").researched && 
+              game.bld.getBuildingExt('amphitheatre').meta.val > 3) || 
+             game.resPool.get('iron').value < 100)
+        );
+    }
+    
+    // Regular logic based on resource production rates
+    const woodProduction = (
+        game.calcResourcePerTick('wood') + 
+        game.getResourcePerTickConvertion('wood') + 
+        game.bld.getBuildingExt('smelter').meta.effects.woodPerTickCon + 
+        game.calcResourcePerTick('wood') * game.prestige.getParagonProductionRatio()
+    ) * 5;
+    
+    const mineralsProduction = (
+        game.calcResourcePerTick('minerals') + 
+        game.getResourcePerTickConvertion('minerals') + 
+        game.bld.getBuildingExt('smelter').meta.effects.mineralsPerTickCon + 
+        game.calcResourcePerTick('minerals') * game.prestige.getParagonProductionRatio()
+    ) * 5;
+    
+    return (
+        woodProduction > game.bld.getBuildingExt('smelter').meta.on && 
+        mineralsProduction > game.bld.getBuildingExt('smelter').meta.on
+    );
+}
+
+/**
+ * Manages mint power based on game state
+ */
+function manageMintPower() {
+    const game = gamePage;
+    const mint = game.bld.getBuildingExt("mint").meta;
+    
+    if (game.resPool.get('paragon').value < 200 && mint.val > 1 && game.calendar.year < 2000) {
+        const manpower = game.resPool.get('manpower');
+        const requiredManpower = mint.on * (manpower.maxValue / mint.val);
+        
+        if (manpower.value > requiredManpower) {
+            if (mint.on < mint.val) {
+                mint.on++;
+            }
+        } else if (mint.on > 1) {
+            mint.on--;
+        }
+    } else if (mint.on !== mint.val) {
+        mint.on = mint.val;
+    }
+}
+
+/**
+ * Handles special logic for the post-apocalypse challenge
+ */
+function handleApocalypseChallengeLogic() {
+    const game = gamePage;
+    const isPostApocalypse = game.challenges.isActive("postApocalypse");
+    
+    // Disable buildings during most of post-apocalypse challenge
+    if (isPostApocalypse && 
+        game.time.getCFU("ressourceRetrieval").val > 0 && 
+        (game.calendar.cycle != 5 || (game.calendar.day <= 10 || game.calendar.day >= 90))) {
+        
+        disableProductionBuildings();
+        postApocalypseIsCompleted = false;
+    }
+    
+    // Enable buildings during summer in post-apocalypse or after challenge completion
+    if ((!postApocalypseIsCompleted && !isPostApocalypse) || 
+        (isPostApocalypse && 
+         game.time.getCFU("ressourceRetrieval").val > 0 && 
+         game.calendar.cycle == 5 && 
+         game.calendar.day > 10 && 
+         game.calendar.day < 90)) {
+        
+        enableAllProductionBuildings();
+        
+        if (!postApocalypseIsCompleted && !isPostApocalypse) {
+            postApocalypseIsCompleted = true;
+        }
+    }
+}
+
+/**
+ * Disables all production buildings during post-apocalypse challenge
+ */
+function disableProductionBuildings() {
+    const game = gamePage;
+    
+    game.bld.getBuildingExt('mine').meta.on = 0;
+    game.bld.getBuildingExt('quarry').meta.on = 0;
+    game.bld.getBuildingExt('calciner').meta.on = 0;
+    game.bld.getBuildingExt('steamworks').meta.on = 0;
+    game.bld.getBuildingExt('magneto').meta.on = 0;
+    game.bld.getBuildingExt('oilWell').meta.isAutomationEnabled = false;
+    
+    if (game.workshop.get("geodesy").researched) {
+        game.bld.getBuildingExt('smelter').meta.on = 0;
+    }
+}
+
+/**
+ * Enables all production buildings
+ */
+function enableAllProductionBuildings() {
+    const game = gamePage;
+    
+    game.bld.getBuildingExt('mine').meta.on = game.bld.getBuildingExt('mine').meta.val;
+    game.bld.getBuildingExt('quarry').meta.on = game.bld.getBuildingExt('quarry').meta.val;
+    game.bld.getBuildingExt('calciner').meta.on = game.bld.getBuildingExt('calciner').meta.val;
+    game.bld.getBuildingExt('smelter').meta.on = game.bld.getBuildingExt('smelter').meta.val;
+    game.bld.getBuildingExt('steamworks').meta.on = game.bld.getBuildingExt('steamworks').meta.val;
+    game.bld.getBuildingExt('magneto').meta.on = game.bld.getBuildingExt('magneto').meta.val;
+    game.bld.getBuildingExt('oilWell').meta.isAutomationEnabled = true;
 }
 
 function ResearchSolarRevolution() {
@@ -4145,7 +4403,7 @@ var runAllAutomation = setInterval(function() {
 
          if (gamePage.timer.ticksTotal % 50 === 0) {
              setTimeout(ResearchSolarRevolution, 0);
-             setTimeout(UpgradeBuildings, 1);
+             setTimeout(upgradeBuildings, 1);
 
         }
 
