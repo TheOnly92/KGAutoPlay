@@ -319,7 +319,7 @@ function autoBuild() {
     // Check priority conditions
     if (Object.keys(craftPriority[0]).length > 0) {
       const isMainPriority = model.metadata.name === craftPriority[0];
-      const isNotPriorityBuilding = NOT_PRIORITY_BLD_NAMES_SET.has(model.metadata.name) > -1;
+      const isNotPriorityBuilding = NOT_PRIORITY_BLD_NAMES_SET.has(model.metadata.name);
       const hasNoPriorityResources = model.prices.filter(price =>
         craftPriority[3].indexOf(price.name) !== -1
       ).length === 0;
@@ -329,8 +329,6 @@ function autoBuild() {
 
     return true;
   });
-
-  GlobalMsg.build = availableBuildings[0].model.name + ', ' + availableBuildings[1].model.name;
 
   // Process each available building
   for (const building of availableBuildings) {
