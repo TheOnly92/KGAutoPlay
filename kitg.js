@@ -2558,115 +2558,264 @@ function autoParty() {
   });
 }
 
+/**
+ * Manages automatic Ziggurat operations in the game
+ * Handles sacrifice of unicorns/alicorns, refining tears, and purchasing upgrades
+ */
 function autozig() {
-    if (gamePage.religionTab.visible) {
-        if (gamePage.bld.getBuildingExt('ziggurat').meta.on > 0 && !gamePage.religionTab.sacrificeBtn) {
-             gamePage.tabs[5].render();
+  // Only proceed if religion tab is visible
+  if (!gamePage.religionTab.visible) {
+    return;
+  }
+
+  const religionTab = gamePage.religionTab;
+  const resPool = gamePage.resPool;
+
+  // Ensure religion tab is rendered properly
+  if (gamePage.bld.getBuildingExt('ziggurat').meta.on > 0 && !religionTab.sacrificeBtn) {
+    gamePage.tabs[5].render();
+  }
+  religionTab.update();
+
+  // Handle unicorn sacrifice
+  handleUnicornSacrifice(religionTab, resPool);
+
+  // Handle alicorn sacrifice
+  handleAlicornSacrifice(religionTab, resPool);
+
+  // Handle time crystal refinement
+  if (!switches['CollectResBReset']) {
+    handleTimeCrystalRefinement(religionTab, resPool);
+  }
+
+  // Handle ziggurat upgrades
+  handleZigguratUpgrades(religionTab, resPool);
+
+  // Handle tear refinement
+  handleTearRefinement(religionTab, resPool);
+}
+
+/**
+ * Handles unicorn sacrifice when conditions are met
+ */
+function handleUnicornSacrifice(religionTab, resPool) {
+  if (!religionTab.sacrificeBtn || resPool.get('unicorns').value <= resPool.get('tears').value) {
+    return;
+  }
+
+  const unicornPastureBtn = gamePage.tabs[0].children.filter(res => 
+    res.model.metadata && 
+    res.model.metadata.unlocked && 
+    res.model.metadata.name == 'unicornPasture'
+  );
+
+  if (unicornPastureBtn.length === 0) {
+    return;
+  }
+
+  const unicornPrice = unicornPastureBtn[0].model.prices.filter(res => res.name == "unicorns")[0].val;
+  const unicornDifference = unicornPrice - resPool.get('unicorns').value;
+  const unicornProductionRate = gamePage.getResourcePerTick('unicorns', true) * gamePage.getTicksPerSecondUI();
+  const minutesToRecover = (unicornDifference / unicornProductionRate) / 60;
+
+  if (minutesToRecover > 0.1 && religionTab.sacrificeBtn.model.allLink.visible) {
+    religionTab.sacrificeBtn.controller.transform(religionTab.sacrificeBtn.model, 1, {}, 
+      function(result) {/* callback intentionally left empty */}
+    );
+  }
+}
+
+/**
+ * Handles alicorn sacrifice when conditions are met
+ */
+function handleAlicornSacrifice(religionTab, resPool) {
+  const alicornValue = resPool.get('alicorn').value;
+  const timeCrystalValue = resPool.get("timeCrystal").value;
+
+  if (alicornValue <= 25) {
+    return;
+  }
+
+  const shouldSacrifice = switches['CollectResBReset'] || 
+    alicornValue > timeCrystalValue || 
+    shouldSacrificeForTimeCrystals(timeCrystalValue);
+
+  if (shouldSacrifice && religionTab.sacrificeAlicornsBtn.model.allLink.visible) {
+    religionTab.sacrificeAlicornsBtn.controller.transform(
+      religionTab.sacrificeAlicornsBtn.model, 
+      1, 
+      {}, 
+      function(result) {/* callback intentionally left empty */}
+    );
+  }
+}
+
+/**
+ * Determines if alicorns should be sacrificed for time crystals
+ */
+function shouldSacrificeForTimeCrystals(timeCrystalValue) {
+  if (!gamePage.time.meta[0].meta[5].unlocked) {
+    return false;
+  }
+
+  const cfPanel = gamePage.timeTab.cfPanel.children[0].children[6];
+  const tcPrice = cfPanel.model.prices.filter(res => res.name == "timeCrystal")[0].val;
+  const tcThreshold = tcPrice * (cfPanel.model.metadata.val > 2 ? 0.9 : 0.05);
+
+  return timeCrystalValue > tcThreshold;
+}
+
+/**
+ * Handles time crystal refinement
+ */
+function handleTimeCrystalRefinement(religionTab, resPool) {
+  if (!religionTab.refineTCBtn || !religionTab.refineTCBtn.model.visible) {
+    return;
+  }
+
+  const relicValue = resPool.get('relic').value;
+  const timeCrystalValue = resPool.get('timeCrystal').value;
+
+  // First condition - early game refinement
+  const earlyGameCondition = !gamePage.workshop.get("relicStation").researched && 
+    (!gamePage.workshop.get("chronoforge").researched || gamePage.religion.getTU("blackNexus").on > 5) && 
+    (relicValue < (gamePage.challenges.isActive("energy") ? 25 : 5) && timeCrystalValue > 50);
+
+  // Second condition - late game bulk refinement
+  const relicEquivalent = relicValue + (resPool.get("blackcoin").value * 1000);
+  const relicRatioEffect = gamePage.getEffect("relicRefineRatio") * 
+    gamePage.religion.getZU("blackPyramid").getEffectiveValue(gamePage);
+  const potentialRelics = timeCrystalValue / 25 * (1 + relicRatioEffect);
+
+  const lateGameCondition = gamePage.calendar.year > 1000 && 
+    relicEquivalent < potentialRelics && 
+    timeCrystalValue > 1000000 && 
+    GlobalMsg["ressourceRetrieval"] == '';
+
+  if (earlyGameCondition) {
+    // Buy single TC refinement
+    religionTab.refineTCBtn.controller.buyItem(
+      religionTab.refineTCBtn.model, 
+      {}, 
+      function(result) {
+        if (result) {
+          religionTab.refineTCBtn.update();
         }
-        gamePage.religionTab.update();
+      }
+    );
+  } else if (lateGameCondition && religionTab.refineTCBtn.model.allLink.visible) {
+    // Transform all TCs
+    religionTab.refineTCBtn.controller.transform(
+      religionTab.refineTCBtn.model, 
+      1, 
+      {}, 
+      function(result) {/* callback intentionally left empty */}
+    );
+  }
+}
 
+/**
+ * Handles purchasing ziggurat upgrades
+ */
+function handleZigguratUpgrades(religionTab, resPool) {
+  const zgUpgradeButtons = religionTab.zgUpgradeButtons;
 
-        if (gamePage.religionTab.sacrificeBtn && gamePage.resPool.get('unicorns').value > gamePage.resPool.get('tears').value ){
-            var btn = gamePage.tabs[0].children.filter(res =>  res.model.metadata && res.model.metadata.unlocked && res.model.metadata.name == 'unicornPasture');
+  if (zgUpgradeButtons.filter(res => res.model.metadata.unlocked).length === 0) {
+    return;
+  }
 
-            if (btn.length > 0 &&  ((btn[0].model.prices.filter(res => res.name == "unicorns")[0].val - gamePage.resPool.get('unicorns').value) / (gamePage.getResourcePerTick('unicorns', true) * gamePage.getTicksPerSecondUI()))/60 > 0.1){
-                if(gamePage.religionTab.sacrificeBtn.model.allLink.visible){
-                    gamePage.religionTab.sacrificeBtn.controller.transform(gamePage.religionTab.sacrificeBtn.model, 1, {}, function(result) {
-                                                if (result) {
-                                                }})
-                }
-            }
-        }
+  // Sort upgrades by unicorn/alicorn production benefit
+  const sortedButtons = zgUpgradeButtons.filter(res => res.model.visible)
+    .sort(function(a, b) {
+      const a1 = a.model.metadata.effects.alicornPerTick || 0;
+      const a2 = a.model.metadata.effects.unicornsRatioReligion || 0;
+      const b1 = b.model.metadata.effects.alicornPerTick || 0;
+      const b2 = b.model.metadata.effects.unicornsRatioReligion || 0;
 
-        if (gamePage.resPool.get('alicorn').value > 25 && (switches['CollectResBReset'] || gamePage.resPool.get('alicorn').value > gamePage.resPool.get("timeCrystal").value || (gamePage.time.meta[0].meta[5].unlocked && gamePage.resPool.get("timeCrystal").value > gamePage.timeTab.cfPanel.children[0].children[6].model.prices.filter(res => res.name == "timeCrystal")[0].val * (gamePage.timeTab.cfPanel.children[0].children[6].model.metadata.val > 2 ? 0.9 : 0.05)))) {
-            if (gamePage.religionTab.sacrificeAlicornsBtn.model.allLink.visible){
-                gamePage.religionTab.sacrificeAlicornsBtn.controller.transform(gamePage.religionTab.sacrificeAlicornsBtn.model, 1, {}, function(result) {
-                                                if (result) {
-                                                }})
-            }
-        }
-        if (!switches['CollectResBReset']) {
-            if (!gamePage.workshop.get("relicStation").researched && (!gamePage.workshop.get("chronoforge").researched || gamePage.religion.getTU("blackNexus").on > 5) && (gamePage.resPool.get('relic').value  < (gamePage.challenges.isActive("energy") ? 25 : 5) && gamePage.resPool.get('timeCrystal').value > 50)) {
-                if (gamePage.religionTab.refineTCBtn && gamePage.religionTab.refineTCBtn.model.visible){
-                    gamePage.religionTab.refineTCBtn.controller.buyItem(gamePage.religionTab.refineTCBtn.model, {}, function(result) {
-                        if (result) {
-                             gamePage.religionTab.refineTCBtn.update();
-                        }
-                        });
-                }
-            } else if (gamePage.calendar.year > 1000 && (gamePage.resPool.get('relic').value + (gamePage.resPool.get("blackcoin").value * 1000)) < (gamePage.resPool.get('timeCrystal').value / 25 * (1 + gamePage.getEffect("relicRefineRatio") * gamePage.religion.getZU("blackPyramid").getEffectiveValue(gamePage)))  && (gamePage.resPool.get('timeCrystal').value > 1000000 && GlobalMsg["ressourceRetrieval"] == '')) {
-                if(gamePage.religionTab.refineTCBtn && gamePage.religionTab.refineTCBtn.model.allLink.visible){
-                    gamePage.religionTab.refineTCBtn.controller.transform(gamePage.religionTab.refineTCBtn.model, 1, {}, function(result) {
-                                                if (result) {
-                                                }})
-                }
-            }
-        }
+      return (a1 + a2) - (b1 + b2);
+    });
 
+  // Update enabled status for all buttons
+  for (let zg = 0; zg < sortedButtons.length; zg++) {
+    sortedButtons[zg].controller.updateEnabled(sortedButtons[zg].model);
+  }
 
+  // Check if we should purchase upgrades
+  const shouldPurchase = sortedButtons.length < 2 || 
+    sortedButtons.slice(sortedButtons.length - 2).some(btn => btn.model.enabled) ||
+    zgUpgradeButtons[0].model.prices.filter(res => res.name == "tears")[0].val < resPool.get('tears').value * 0.1 ||
+    (zgUpgradeButtons[6].model.prices.filter(res => res.name == "tears")[0].val < resPool.get('tears').value * 0.1 && 
+      zgUpgradeButtons[6].model.prices.filter(res => res.name == "unobtainium")[0].val < resPool.get('unobtainium').value);
 
-        if(gamePage.religionTab.zgUpgradeButtons.filter(res => res.model.metadata.unlocked).length > 0){
-            zig = gamePage.religionTab.zgUpgradeButtons.filter(res => res.model.visible).sort(function(a, b) {
-                        a1 = a.model.metadata.effects.alicornPerTick;
-                        a2 = a.model.metadata.effects.unicornsRatioReligion
-                        b1 = b.model.metadata.effects.alicornPerTick;
-                        b2 = b.model.metadata.effects.unicornsRatioReligion
-                        if (!a1){a1 = 0};
-                        if (!a2){a2 = 0};
-                        if (!b1){b1 = 0};
-                        if (!b2){b2 = 0};
+  if (!shouldPurchase) {
+    return;
+  }
 
-                        return ((a1 + a2) - (b1 + b2));
-                     });
+  // Purchase upgrades starting from the most beneficial
+  for (let zg = sortedButtons.length - 1; zg >= 0; zg--) {
+    const btn = sortedButtons[zg];
 
-            var btn = zig;
-
-             for (var zg = 0; zg < btn.length; zg++) {
-                btn[zg].controller.updateEnabled(btn[zg].model);
-             }
-
-            if (btn.length < 2 || (btn.slice(btn.length - 2, btn.length ).filter(res => res.model.enabled).length > 0) || (gamePage.religionTab.zgUpgradeButtons[0].model.prices.filter(res => res.name == "tears")[0].val < gamePage.resPool.get('tears').value * 0.1) || (gamePage.religionTab.zgUpgradeButtons[6].model.prices.filter(res => res.name == "tears")[0].val < gamePage.resPool.get('tears').value * 0.1 && gamePage.religionTab.zgUpgradeButtons[6].model.prices.filter(res => res.name == "unobtainium")[0].val < gamePage.resPool.get('unobtainium').value) ) {
-                for (var zg = btn.length - 1; zg >= 0; zg--) {
-                    if (btn[zg] && btn[zg].model.metadata.unlocked && (!btn[zg].model.prices.filter(res => res.name == "unobtainium")[0] || btn[zg].model.prices.filter(res => res.name == "unobtainium")[0].val < (gamePage.resPool.get('unobtainium').value - (gamePage.bld.getBuildingExt('chronosphere').meta.val < 10 ?  Chronosphere10SummPrices()["unobtainium"] : 0)) )) {
-                        if (btn[zg].model.metadata.name == "unicornGraveyard" && gamePage.religionTab.zgUpgradeButtons[7].model.on > 0 && (gamePage.religionTab.zgUpgradeButtons[8].model.prices.filter(res => res.name == "necrocorn")[0].val < 200 || gamePage.diplomacy.get("leviathans").energy < gamePage.diplomacy.getMarkerCap()))
-                            {}
-                        else{
-                            try {
-                                btn[zg].controller.buyItem(btn[zg].model, {}, function(result) {
-                                    if (result) {
-                                            btn[zg].update();
-                                            gamePage.msg('Build in Ziggurats: ' + btn[zg].model.name );
-                                            if (zg == btn.length - 1 && btn[btn.length - 1].model.enabled) {
-                                                zg++
-                                            }
-                                        }
-                                    });
-                            } catch(err) {
-                            console.log(err);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        if ( gamePage.resPool.get('sorrow').value < gamePage.resPool.get('sorrow').maxValue &&  gamePage.resPool.get('sorrow').value * 10000 < gamePage.resPool.get('tears').value ){
-            var btn = [gamePage.religionTab.refineBtn]
-            for (var zg = 0; zg < btn.length; zg++) {
-                if (btn[zg] && btn[zg].model.visible == true) {
-                    try {
-                         btn[zg].controller.buyItem(btn[zg].model, {}, function(result) {
-                            if (result) {
-                                gamePage.msg('Refine tears: BLS(' + Math.trunc(gamePage.resPool.get('sorrow').value)  + ')');
-                            }
-                            });
-                    } catch(err) {
-                    console.log(err);
-                    }
-                }
-            }
-        }
+    if (!btn || !btn.model.metadata.unlocked) {
+      continue;
     }
+
+    // Check if we should skip for unobtainium requirements
+    const unobtainiumPrice = btn.model.prices.find(res => res.name == "unobtainium");
+    const reservedUnobtainium = gamePage.bld.getBuildingExt('chronosphere').meta.val < 10 ? 
+      Chronosphere10SummPrices()["unobtainium"] : 0;
+
+    if (unobtainiumPrice && unobtainiumPrice.val >= (resPool.get('unobtainium').value - reservedUnobtainium)) {
+      continue;
+    }
+
+    // Skip unicorn graveyard if we're waiting for necrocorns
+    if (btn.model.metadata.name == "unicornGraveyard" && 
+      zgUpgradeButtons[7].model.on > 0 && 
+      (zgUpgradeButtons[8].model.prices.filter(res => res.name == "necrocorn")[0].val < 200 || 
+        gamePage.diplomacy.get("leviathans").energy < gamePage.diplomacy.getMarkerCap())) {
+      continue;
+    }
+
+    try {
+      btn.controller.buyItem(btn.model, {}, function(result) {
+        if (result) {
+          btn.update();
+          gamePage.msg('Build in Ziggurats: ' + btn.model.name);
+        }
+      });
+    } catch(err) {
+      console.log(err);
+    }
+  }
+}
+
+/**
+ * Handles refining tears into Black Liquid Sorrow when appropriate
+ */
+function handleTearRefinement(religionTab, resPool) {
+  const sorrowResource = resPool.get('sorrow');
+  const tearsResource = resPool.get('tears');
+
+  if (sorrowResource.value >= sorrowResource.maxValue || 
+    sorrowResource.value * 10000 >= tearsResource.value) {
+    return;
+  }
+
+  if (religionTab.refineBtn && religionTab.refineBtn.model.visible) {
+    try {
+      religionTab.refineBtn.controller.buyItem(
+        religionTab.refineBtn.model, 
+        {}, 
+        function(result) {
+          if (result) {
+            gamePage.msg('Refine tears: BLS(' + Math.trunc(sorrowResource.value) + ')');
+          }
+        }
+      );
+    } catch(err) {
+      console.log(err);
+    }
+  }
 }
 
 var IincKAssign = 0;
