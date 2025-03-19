@@ -3597,42 +3597,75 @@ function autoNip() {
 }
 
 function autoRefine() {
-    if ((gamePage.village.getKittens() < 14 || !gamePage.workshopTab.visible) && ((!gamePage.challenges.isActive("winterIsComing") || gamePage.bld.getBuildingExt('hut').meta.val == 0) && gamePage.bld.getBuildingExt('field').meta.unlocked && gamePage.resPool.get('catnip').value > gamePage.resPool.get('wood').value * 5  && gamePage.resPool.get('catnip').value > Math.min(gamePage.resPool.get('catnip').maxValue * 0.9, (gamePage.calendar.season >= 1 ? Math.max(gamePage.tabs[0].children[2].model.prices.filter(res => res.name == "catnip")[0].val * 2, 100) : 100)))) {
-        if (!gamePage.workshopTab.visible ){
+  const game = gamePage;
+  const resourcePool = game.resPool;
+  const catnip = resourcePool.get('catnip');
+  const wood = resourcePool.get('wood');
+  const bonfire = game.tabs[0].children[1];
+  const field = game.tabs[0].children[2];
 
-                    if (gamePage.tabs[0].children[1].model.x100Link.visible && gamePage.tabs[0].children[2].model.resourceIsLimited ){
-                        gamePage.tabs[0].children[1].model.x100Link.handler(gamePage.tabs[0].children[1].model);
-                    }
-                    else if(gamePage.tabs[0].children[2] && gamePage.tabs[0].children[2].model.resourceIsLimited && gamePage.tabs[0].children[1].model.visible){
-                        gamePage.tabs[0].children[1].controller.buyItem(gamePage.tabs[0].children[1].model, {}, function(){})
-                    }
-                    else {
-                        btn = gamePage.tabs[0].children[1];
-                        price = gamePage.tabs[0].children[1].model.prices.filter(res => res.name == "catnip")[0].val;
-                        limit = Math.ceil(Math.min(gamePage.resPool.get('wood').maxValue * 0.1 - gamePage.resPool.get('wood').value, Math.trunc(gamePage.resPool.get('catnip').value/price)-1));
+  // Check if refining is needed
+  const shouldRefine = () => {
+    // Basic conditions
+    const hasLowKittens = game.village.getKittens() < 14;
+    const workshopNotAvailable = !game.workshopTab.visible;
+    const winterChallengeException = !game.challenges.isActive("winterIsComing") || 
+      game.bld.getBuildingExt('hut').meta.val == 0;
+    const fieldUnlocked = game.bld.getBuildingExt('field').meta.unlocked;
 
+    // Resource conditions
+    const excessCatnip = catnip.value > wood.value * 5;
+    const season = game.calendar.season;
+    const catnipThreshold = season >= 1 
+      ? Math.max(field.model.prices.find(res => res.name == "catnip").val * 2, 100) 
+      : 100;
+    const catnipAboveThreshold = catnip.value > Math.min(catnip.maxValue * 0.9, catnipThreshold);
 
-                        for (var rf = 0; rf < limit; rf++) {
-                            if (btn.model.enabled) {
-                                 try {
-                                        btn.controller.buyItem(btn.model, {}, function(result) {
-                                                if (result) {
-                                                }
-                                        });
-                                     } catch(err) {
-                                        console.log(err);
-                                     }
-                            }
-                        }
-                    }
+    return (hasLowKittens || workshopNotAvailable) && 
+      winterChallengeException && 
+      fieldUnlocked && 
+      excessCatnip && 
+      catnipAboveThreshold;
+  };
 
+  if (!shouldRefine()) return;
+
+  // Execute refining
+  if (!game.workshopTab.visible) {
+    if (bonfire.model.x100Link.visible && field.model.resourceIsLimited) {
+      // Refine 100 at once
+      bonfire.model.x100Link.handler(bonfire.model);
+    } 
+    else if (field.model.resourceIsLimited && bonfire.model.visible) {
+      // Refine once
+      bonfire.controller.buyItem(bonfire.model, {}, () => {});
+    } 
+    else {
+      // Calculate optimal refining limit
+      const catnipPrice = bonfire.model.prices.find(res => res.name == "catnip").val;
+      const woodSpaceLeft = wood.maxValue * 0.1 - wood.value;
+      const affordableRefines = Math.trunc(catnip.value / catnipPrice) - 1;
+      const refineLimit = Math.ceil(Math.min(woodSpaceLeft, affordableRefines));
+
+      // Refine multiple times
+      for (let i = 0; i < refineLimit; i++) {
+        if (bonfire.model.enabled) {
+          try {
+            bonfire.controller.buyItem(bonfire.model, {}, () => {});
+          } catch (err) {
+            console.log(err);
+            break;
+          }
         }
-        else if(gamePage.tabs[0].children[1].model.x100Link && gamePage.ironWill && gamePage.resPool.get('wood').value < gamePage.resPool.get('wood').maxValue * 0.1) {
-            if (gamePage.tabs[0].children[1].model.x100Link.visible){
-                gamePage.tabs[0].children[1].model.x100Link.handler(gamePage.tabs[0].children[1].model);
-            }
-        }
+      }
     }
+  } 
+  else if (bonfire.model.x100Link && game.ironWill && wood.value < wood.maxValue * 0.1) {
+    // Special case for ironWill mode
+    if (bonfire.model.x100Link.visible) {
+      bonfire.model.x100Link.handler(bonfire.model);
+    }
+  }
 }
 
 function upgradeByModel(target){
