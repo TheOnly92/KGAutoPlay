@@ -4090,197 +4090,784 @@ function researchSolarRevolution() {
   return GlobalMsg['solarRevolution'];
 }
 
-function Timepage() {
-        GlobalMsg['relicStation'] = ''
-        GlobalMsg['voidAspiration'] = ''
-        if (gamePage.science.get('voidSpace').researched || gamePage.workshop.get("chronoforge").researched ){
-            gamePage.timeTab.update();
+// These constants help explain some frequently used numeric thresholds
+const VOID_COST_RATIO_THRESHOLD = 0.1;
+const CRYOCHAMBER_FIXED_MSG = 'Cryochamber Fixed';
+const BUILD_IN_TIME_MSG_PREFIX = 'Build in Time: ';
+
+/**
+ * Main automation function for the Kittens Game "Time" tab.
+ * It orchestrates automation for Void Space buildings, Chronoforge buildings,
+ * time-skips, and temporal flux acceleration.
+ */
+function timePage() {
+    // Clears some globally tracked messages used elsewhere in the UI.
+    resetGlobalMessages();
+
+    // Updates the Time tab if certain research has been completed.
+    if (gamePage.science.get('voidSpace').researched ||
+        gamePage.workshop.get("chronoforge").researched)
+    {
+        gamePage.timeTab.update();
+    }
+
+    // Handles automation for Void Space buildings (e.g., Cryochambers).
+    handleVoidSpaceAutomation();
+
+    // Handles automation for Chronoforge buildings and time skipping.
+    handleChronoforgeAutomation();
+
+    // Enables temporal flux acceleration if relevant conditions are met.
+    accelerateTimeIfNeeded();
+}
+
+/* ------------------------------------------------------------------
+ *  1. Resetting Global Messages
+ * ------------------------------------------------------------------*/
+
+/**
+ * Resets global messages related to relicStation and voidAspiration
+ * at the start of each automation cycle.
+ */
+function resetGlobalMessages() {
+    GlobalMsg['relicStation'] = '';
+    GlobalMsg['voidAspiration'] = '';
+}
+
+/* ------------------------------------------------------------------
+ *  2. Void Space Automation
+ * ------------------------------------------------------------------*/
+
+/**
+ * Oversees building purchases in the Void Space panel.
+ * Skips logic if Void Space research is not done or if a specific
+ * global science condition ("Paradox Theory") is in effect.
+ */
+function handleVoidSpaceAutomation() {
+    if (!gamePage.science.get('voidSpace').researched ||
+        GlobalMsg['science'] === 'Paradox Theory') 
+    {
+        return;
+    }
+
+    const voidBuilds = gamePage.timeTab.vsPanel.children[0].children;
+    const voidCf = computeVoidCfThreshold(voidBuilds);
+
+    // If time smoothing is researched and we're not in Iron Will mode,
+    // handle early Void Space buildings (index 0 and 1) specifically.
+    if (gamePage.workshop.get("turnSmoothly").researched && !gamePage.ironWill) {
+        buildCryochamberIfAffordable(voidBuilds, voidCf);
+        buildVoidItem1IfAffordable(voidBuilds, voidCf);
+    }
+
+    // Remaining Void Space buildings start at index 3
+    try {
+        for (let i = 3; i < voidBuilds.length; i++) {
+            const vb = voidBuilds[i];
+            if (!vb.model.metadata.unlocked || !vb.model.enabled) {
+                continue;
+            }
+            if (switches['CollectResBReset']) {
+                // If a certain flag is set, we skip automation for these items.
+                continue;
+            }
+            handleOtherVoidBuildings(vb, i, voidBuilds, voidCf);
         }
-        if (gamePage.science.get('voidSpace').researched && GlobalMsg['science'] != 'Paradox Theory'){
-            var VoidBuild = gamePage.timeTab.vsPanel.children[0].children;
-            var voidcf = gamePage.religion.getZU("marker").val > 1 ? Math.max(Math.min(VoidBuild[3].model.prices.filter(res => res.name == "void")[0].val,VoidBuild[5].model.prices.filter(res => res.name == "void")[0].val),gamePage.resPool.get("void").value) : Math.min(VoidBuild[3].model.prices.filter(res => res.name == "void")[0].val,VoidBuild[5].model.prices.filter(res => res.name == "void")[0].val)
-            if (gamePage.workshop.get("turnSmoothly").researched && !gamePage.ironWill) {
-                if (VoidBuild[0].model.visible) {
-                    if ( Math.max(500, VoidBuild[2].model.on * 20) > voidcf * 0.1){
-                        {}
-                    }else {
-                        VoidBuild[0].controller.buyItem(VoidBuild[0].model, {}, function(result) {
-                        if (result) {
-                            gamePage.msg('Cryochamber Fixed');
-                        }
-                        });
-                    }
-                }
+    } catch (err) {
+        console.log(err);
+    }
+}
 
-                if (VoidBuild[1].model.visible) {
-                    if ( VoidBuild[1].model.prices.filter(res => res.name == 'void')[0].val > voidcf * 0.1 ||  VoidBuild[1].model.metadata.val >= Math.max(Math.ceil((VoidBuild[2].model.metadata.val+1) * 0.1), 5) ){
-                        {}
-                    }else {
-                        VoidBuild[1].controller.buyItem(VoidBuild[1].model, {}, function(result) {
-                        if (result) {
-                            VoidBuild[1].update();
-                            gamePage.msg('Build in Time: ' + VoidBuild[1].model.name );
-                        }
-                        });
-                    }
-                }
+/**
+ * Calculates a reference threshold (voidCf) that helps decide
+ * whether certain Void Space buildings are affordable or not,
+ * based on the minimum "void" cost among selected buildings
+ * and how many Markers have been built in religion.
+ */
+function computeVoidCfThreshold(voidBuilds) {
+    const markerVal = gamePage.religion.getZU("marker").val;
+    const costVoidBuild3 = voidBuilds[3].model.prices.filter(r => r.name === 'void')[0].val;
+    const costVoidBuild5 = voidBuilds[5].model.prices.filter(r => r.name === 'void')[0].val;
+    const minCost = Math.min(costVoidBuild3, costVoidBuild5);
+
+    // If more than one Marker is built, clamp the min cost by the current void resource.
+    // Otherwise, use just the min cost among the selected buildings.
+    if (markerVal > 1) {
+        return Math.max(minCost, gamePage.resPool.get("void").value);
+    }
+    return minCost;
+}
+
+/**
+ * Automates purchasing a Cryochamber (voidBuilds[0]) if it meets
+ * certain ratio thresholds related to its cost.
+ */
+function buildCryochamberIfAffordable(voidBuilds, voidCf) {
+    const cryoChamber = voidBuilds[0];
+    if (!cryoChamber.model.visible) {
+        return;
+    }
+
+    // Enforces a specific comparison to decide if it's cheap enough to build.
+    // The costCheck scales with the number of active items at index 2.
+    const costCheck = Math.max(500, voidBuilds[2].model.on * 20);
+    if (costCheck <= voidCf * VOID_COST_RATIO_THRESHOLD) {
+        cryoChamber.controller.buyItem(cryoChamber.model, {}, result => {
+            if (result) {
+                gamePage.msg(CRYOCHAMBER_FIXED_MSG);
             }
+        });
+    }
+}
 
+/**
+ * Automates purchasing the Void Space building at index 1 if it meets
+ * certain cost and count-based thresholds.
+ */
+function buildVoidItem1IfAffordable(voidBuilds, voidCf) {
+    const item1 = voidBuilds[1];
+    if (!item1.model.visible) {
+        return;
+    }
 
-			try {
-				for (var v = 3 ;v < VoidBuild.length; v++) {
-					if (VoidBuild[v].model.metadata.unlocked && VoidBuild[v].model.enabled) {
+    const voidCost = item1.model.prices.filter(r => r.name === 'void')[0].val;
+    const maxVal = Math.max(Math.ceil((voidBuilds[2].model.metadata.val + 1) * 0.1), 5);
 
-					    if (!switches['CollectResBReset'] ) {
-                            if (gamePage.workshop.get("voidAspiration").unlocked && !gamePage.workshop.get("voidAspiration").researched){
-                                {
-                                    GlobalMsg['voidAspiration'] = gamePage.workshop.get("voidAspiration").label
-                                }
-                            }
-                            else{
-                                if (( v == 5 && (!gamePage.workshop.get("turnSmoothly").researched && gamePage.timeTab.vsPanel.children[0].children[5].model.metadata.val > 0 && gamePage.resPool.get("temporalFlux").value - VoidBuild[5].model.prices.filter(res => res.name == "temporalFlux")[0].val < gamePage.workshop.get("turnSmoothly").prices.filter(res => res.name == "temporalFlux")[0].val)) || (v == 6 && gamePage.time.meta[0].meta[5].val < 3)){
-                                  {}
-                                }
-                                else if ((v != 3 && v != 5 ) && ((VoidBuild[3].model.metadata.unlocked && VoidBuild[3].model.prices.filter(res => res.name == 'void')[0].val < voidcf * 0.1) || (VoidBuild[5].model.metadata.unlocked  && VoidBuild[5].model.prices.filter(res => res.name == 'void')[0].val < voidcf * 0.1 ))){
-                                  {}
-                                }
-                                else if (gamePage.ironWill){
-                                    if(!VoidBuild[v].model.metadata.effects.maxKittens ){
-                                        VoidBuild[v].controller.buyItem(VoidBuild[v].model, {}, function(result) {
-                                        if (result) {
-                                            VoidBuild[v].update();
-                                            gamePage.msg('Build in Time: ' + VoidBuild[v].model.name );
-                                        }
-                                        });
-                                    }
-                                }else{
-                                    VoidBuild[v].controller.buyItem(VoidBuild[v].model, {}, function(result) {
-                                    if (result) {
-                                        VoidBuild[v].update();
-                                        gamePage.msg('Build in Time: ' + VoidBuild[v].model.name );
-                                    }
-                                    });
-                                }
-                            }
-						}
+    // If the item is too expensive relative to voidCf or its count is above maxVal, skip it.
+    if (voidCost > voidCf * VOID_COST_RATIO_THRESHOLD ||
+        item1.model.metadata.val >= maxVal)
+    {
+        return;
+    }
 
-					}
-				}
-			} catch(err) {
-			    console.log(err);
-			}
+    // Otherwise, purchase it.
+    item1.controller.buyItem(item1.model, {}, result => {
+        if (result) {
+            item1.update();
+            gamePage.msg(BUILD_IN_TIME_MSG_PREFIX + item1.model.name);
+        }
+    });
+}
 
-	    }
-        if (gamePage.workshop.get("chronoforge").researched){
-            var chronoforge = gamePage.timeTab.cfPanel.children[0].children;
-            var tc_val = gamePage.resPool.get("timeCrystal").value
-            var factor = gamePage.challenges.getChallenge("1000Years").researched ? 5 : 10
-            var fast_combust = (Math.max(tc_val, 600) < gamePage.resPool.get("void").value || (tc_val > 45 && gamePage.calendar.day < 10 && gamePage.time.heat < gamePage.getEffect("heatMax") * 0.9)) && gamePage.time.meta[0].meta[5].val >= 1 && gamePage.religion.getTU("darkNova").on > 0
-            var not_dark = gamePage.calendar.darkFutureYears(true) < 0
+/**
+ * Coordinates purchasing of other Void Space items (index >= 3),
+ * with detailed skip conditions to avoid suboptimal spending and
+ * special cases for Iron Will mode.
+ */
+function handleOtherVoidBuildings(buildingBtn, index, voidBuilds, voidCf) {
+    // If a specific workshop upgrade is available but not researched,
+    // record that for the UI and skip further building logic.
+    if (gamePage.workshop.get("voidAspiration").unlocked &&
+        !gamePage.workshop.get("voidAspiration").researched)
+    {
+        GlobalMsg['voidAspiration'] = gamePage.workshop.get("voidAspiration").label;
+        return;
+    }
 
-            if (gamePage.time.getCFU("blastFurnace").unlocked) {
-		    		if (gamePage.time.getCFU("blastFurnace").isAutomationEnabled) {
-                    	gamePage.time.getCFU("blastFurnace").isAutomationEnabled = false
-					}
-              /*
-                if (gamePage.calendar.cycle == 5 && gamePage.time.getCFU("blastFurnace").heat < 200  && gamePage.time.getCFU("blastFurnace").isAutomationEnabled) {
-                    gamePage.time.getCFU("blastFurnace").isAutomationEnabled = false
-                }
-                else if (!gamePage.time.getCFU("blastFurnace").isAutomationEnabled && gamePage.resPool.energyProd - gamePage.resPool.energyCons >= 0 &&  gamePage.calendar.cycle != 5 ) {
-                    gamePage.time.getCFU("blastFurnace").isAutomationEnabled = true
-                }
-                */
-            }
+    // Skipping logic for certain items or cycles:
+    // For instance, skip building #5 if "turnSmoothly" isn't researched and the
+    // resource constraints aren't met; skip building #6 if time.meta is below 3, etc.
+    if (
+        (index === 5 &&
+         !gamePage.workshop.get("turnSmoothly").researched &&
+         voidBuilds[5].model.metadata.val > 0 &&
+         (gamePage.resPool.get("temporalFlux").value -
+             voidBuilds[5].model.prices.filter(res => res.name === "temporalFlux")[0].val)
+             < gamePage.workshop.get("turnSmoothly")
+                  .prices.filter(res => res.name === "temporalFlux")[0].val
+        ) ||
+        (index === 6 && gamePage.time.meta[0].meta[5].val < 3)
+    ) {
+        return; // skip building
+    }
 
-            if (gamePage.workshop.get("relicStation").unlocked && !gamePage.workshop.get("relicStation").researched && gamePage.science.get("paradoxalKnowledge").researched){
-                GlobalMsg['relicStation'] = gamePage.workshop.get("relicStation").label + ' ' + Math.round((gamePage.resPool.get("antimatter").value/gamePage.workshop.get("relicStation").prices.filter(res => res.name == 'antimatter')[0].val)*100) + '%';
-            }
+    // If the item is neither index 3 nor 5, skip if item #3 or #5 would be cheaper than our threshold.
+    if (
+        index !== 3 && index !== 5 &&
+        (
+            (voidBuilds[3].model.metadata.unlocked &&
+             voidBuilds[3].model.prices.filter(r => r.name === 'void')[0].val
+              < voidCf * VOID_COST_RATIO_THRESHOLD
+            ) ||
+            (voidBuilds[5].model.metadata.unlocked &&
+             voidBuilds[5].model.prices.filter(r => r.name === 'void')[0].val
+              < voidCf * VOID_COST_RATIO_THRESHOLD
+            )
+        )
+    ) {
+        return; // skip building
+    }
 
+    // In Iron Will mode, skip if the building has an effect that increases max Kittens.
+    // Otherwise, proceed with the purchase.
+    if (gamePage.ironWill) {
+        if (!buildingBtn.model.metadata.effects.maxKittens) {
+            buyAndNotify(buildingBtn);
+        }
+    } else {
+        buyAndNotify(buildingBtn);
+    }
+}
 
-            if (!switches['CollectResBReset'] || gamePage.time.getCFU("ressourceRetrieval").val >= 1) {
-                if (gamePage.time.getCFU("ressourceRetrieval").val > 0 && (!gamePage.challenges.isActive("1000Years") || gamePage.resPool.get("void").value > 800)){
-                    if ( gamePage.resPool.get("unobtainium").value < gamePage.resPool.get("unobtainium").maxValue * 0.9 && (gamePage.resPool.energyProd - gamePage.resPool.energyCons >= 0 || gamePage.resPool.get("antimatter").value >= gamePage.resPool.get("antimatter").maxValue) && gamePage.calendar.day > 1 && (  (gamePage.calendar.cycle != 5 && gamePage.prestige.getPerk("numerology").researched) || (gamePage.time.meta[0].meta[5].val >= (gamePage.resPool.get('paragon').value > 100 ? 1 : 3) && tc_val >= (gamePage.resPool.get('paragon').value > 100 ? 1 : gamePage.time.meta[0].meta[5].val * 1000) )) && (((gamePage.calendar.cycle != 5 && gamePage.prestige.getPerk("numerology").researched) || ( (gamePage.time.meta[0].meta[5].val >= 3 || gamePage.time.heat < 50)  && (gamePage.workshop.get("relicStation").unlocked && !gamePage.workshop.get("relicStation").researched && gamePage.science.get("paradoxalKnowledge").researched)  && (tc_val > (fast_combust ? 5 : 45) && gamePage.bld.getBuildingExt('chronosphere').meta.val >= 10) && gamePage.space.getBuilding('sunlifter').val > 0 ))  || ( gamePage.time.meta[0].meta[5].val >= (gamePage.resPool.get('paragon').value > 100 ? 1 : 3) && ((gamePage.time.heat == 0 && ((gamePage.calendar.cycle != 5 && gamePage.prestige.getPerk("numerology").researched) || (gamePage.calendar.season > 0 && gamePage.time.meta[0].meta[5].val >= 3) ))  || ( (fast_combust ? true : gamePage.time.heat + 50 * factor < gamePage.getEffect("heatMax")) && tc_val > (gamePage.resPool.get('paragon').value > 100 ? (gamePage.time.meta[0].meta[5].val >= 3 ? 5 : 5000) : gamePage.time.meta[0].meta[5].val * 1000)  && gamePage.calendar.cycle == 5 &&  (gamePage.calendar.season > 0 || (fast_combust ? true : gamePage.time.heat < gamePage.getEffect("heatMax") * 0.5 && gamePage.calendar.day < 10))))))) {
-                        if (gamePage.time.heat > gamePage.getEffect("heatMax") * 0.9 && factor *  chronoforge[0].controller.getPricesMultiple(chronoforge[0].model, 5).timeCrystal <= gamePage.getEffect("heatMax")  &&  [4, 5].indexOf(gamePage.calendar.cycle) == -1 && gamePage.time.meta[0].meta[5].val >= 1 && tc_val >= gamePage.timeTab.cfPanel.children[0].children[0].controller.getPricesMultiple(gamePage.timeTab.cfPanel.children[0].children[0].model, 5).timeCrystal ) {
-                            if (gamePage.getEffect("heatMax") - gamePage.time.heat > chronoforge[0].controller.getPricesMultiple(chronoforge[0].model, 5).timeCrystal * factor){
-                                gamePage.msg('Skip time (1): ' + gamePage.calendar.yearsPerCycle );
-                                chronoforge[0].controller.doShatterAmt(chronoforge[0].model, gamePage.calendar.yearsPerCycle)
-                                chronoforge[0].update();
-                            }
-                        }
-                        else if (factor * chronoforge[0].controller.getPricesMultiple(chronoforge[0].model, 45).timeCrystal <= gamePage.getEffect("heatMax")  && (gamePage.calendar.cycle != 4 || gamePage.time.heat < gamePage.getEffect("heatMax") * 0.9) && gamePage.time.meta[0].meta[5].val >= 3 && tc_val >= gamePage.timeTab.cfPanel.children[0].children[0].controller.getPricesMultiple(gamePage.timeTab.cfPanel.children[0].children[0].model, 45).timeCrystal && gamePage.calendar.cycleYear == 0) {
-                            if ( gamePage.getEffect("heatMax")  - gamePage.time.heat > chronoforge[0].controller.getPricesMultiple(chronoforge[0].model, 45).timeCrystal * factor &&  (gamePage.time.meta[0].meta[5].val >= 3 || (!gamePage.ironWill && gamePage.time.meta[0].meta[5].val >= 1))) {
-                                gamePage.msg('Skip time (2): ' + gamePage.calendar.yearsPerCycle * (gamePage.calendar.cyclesPerEra - 1) );
-                                chronoforge[0].controller.doShatterAmt(chronoforge[0].model, gamePage.calendar.yearsPerCycle * (gamePage.calendar.cyclesPerEra - 1))
-                                chronoforge[0].update();
-                            }
-                        }
-                        else if (factor * chronoforge[0].controller.getPricesMultiple(chronoforge[0].model, 5).timeCrystal <= gamePage.getEffect("heatMax")  && (gamePage.calendar.cycle != 4 || gamePage.time.heat < gamePage.getEffect("heatMax") * 0.9) && gamePage.time.meta[0].meta[5].val >= 1 &&  tc_val >= gamePage.timeTab.cfPanel.children[0].children[0].controller.getPricesMultiple(gamePage.timeTab.cfPanel.children[0].children[0].model, 5).timeCrystal) {
-                            if (gamePage.getEffect("heatMax") - gamePage.time.heat > chronoforge[0].controller.getPricesMultiple(chronoforge[0].model, 5).timeCrystal * factor){
-                                if (gamePage.calendar.cycle == 4) {
-                                    gamePage.msg('Skip time (4): ' + gamePage.calendar.yearsPerCycle - gamePage.calendar.cycleYear );
-                                    chronoforge[0].controller.doShatterAmt(chronoforge[0].model, gamePage.calendar.yearsPerCycle - gamePage.calendar.cycleYear)
-                                    chronoforge[0].update();
-                                } else {
-                                    gamePage.msg('Skip time (3): ' + gamePage.calendar.yearsPerCycle );
-                                    chronoforge[0].controller.doShatterAmt(chronoforge[0].model, gamePage.calendar.yearsPerCycle)
-                                    chronoforge[0].update();
-                                }
-                            }
-                        }
-                        else if (tc_val >= gamePage.timeTab.cfPanel.children[0].children[0].controller.getPricesMultiple(gamePage.timeTab.cfPanel.children[0].children[0].model, 1).timeCrystal && gamePage.getEffect("heatMax") - gamePage.time.heat > chronoforge[0].controller.getPricesMultiple(chronoforge[0].model, 1).timeCrystal * factor) {
-                                try {
-                                       chronoforge[0].controller.buyItem(chronoforge[0].model, {}, function(result) {
-                                        if (result) {
-                                            chronoforge[0].update();
-                                        }
-                                        });
-                                } catch(err) {
-                                    console.log(err);
-                                }
-                        }
-                    }
-                }
-                else if (gamePage.calendar.cycle != 5 && gamePage.time.getCFU("ressourceRetrieval").val == 0 && tc_val >= 1 && gamePage.time.heat < gamePage.getEffect("heatMax") / 2){
-                    chronoforge[0].controller.doShatterAmt(chronoforge[0].model, 1);
-                    chronoforge[0].update();
-                }
-            }
-            if ( gamePage.time.getCFU("ressourceRetrieval").unlocked || (gamePage.time.getCFU("blastFurnace").unlocked && gamePage.time.getCFU("blastFurnace").val < 2)) {
-                try {
-                    for (var t = 1 ;t < chronoforge.length; t++) {
-                        if (!switches['CollectResBReset'] ) {
-                            if (chronoforge[t].model.metadata.name != "ressourceRetrieval" && gamePage.time.getCFU("ressourceRetrieval").unlocked && (gamePage.time.getCFU("ressourceRetrieval").val > 2 ? Math.min(chronoforge[t].model.prices.filter(res => res.name == "timeCrystal")[0].val, gamePage.resPool.get("timeCrystal").value) : gamePage.resPool.get("timeCrystal").value)  > gamePage.timeTab.cfPanel.children[0].children[6].model.prices.filter(res => res.name == "timeCrystal")[0].val * (gamePage.time.getCFU("ressourceRetrieval").val > 3 ? 0.9 : 0.05)  && (gamePage.time.getCFU("ressourceRetrieval").val <= 3 || gamePage.religion.getZU("marker").val > 1) )
-                            {}
-                            else if ( (t != 2 && t != 6) && ((( gamePage.calendar.year < 40000  && gamePage.resPool.get("timeCrystal").value < 20000) || chronoforge[t].model.prices.filter(res => res.name == 'timeCrystal')[0].val > chronoforge[6].model.prices.filter(res => res.name == 'timeCrystal')[0].val * (gamePage.resPool.get("timeCrystal").value > (gamePage.resPool.get("unobtainium").maxValue * 0.01) ? 0.1 : 0.01)) || gamePage.time.getCFU("ressourceRetrieval").val <= 3) )
-                            {}
-                            else if ( t == 7)
-                            {}
-                            else if (t == 2 && ((Math.floor(chronoforge[t].model.metadata.val / 8) - 1) * 5) > chronoforge[6].model.metadata.val)
-                            {}
-                            else if (chronoforge[t].model.metadata.unlocked && chronoforge[t].model.enabled) {
-                                chronoforge[t].controller.buyItem(chronoforge[t].model, {}, function(result) {
-                                    if (result) {
-                                        chronoforge[t].update();
-                                        gamePage.msg('Build in Time: ' + chronoforge[t].model.name );
-                                    }
-                                    });
-                            }
-                        }
-                    }
+/**
+ * Attempts to purchase the given building, then shows a success message
+ * in the log if it was bought successfully.
+ */
+function buyAndNotify(buildingBtn) {
+    buildingBtn.controller.buyItem(buildingBtn.model, {}, result => {
+        if (result) {
+            buildingBtn.update();
+            gamePage.msg(BUILD_IN_TIME_MSG_PREFIX + buildingBtn.model.name);
+        }
+    });
+}
 
-                } catch(err) {
-                    console.log(err);
-                }
+/* ------------------------------------------------------------------
+ *  3. Chronoforge Automation
+ * ------------------------------------------------------------------*/
+
+/**
+ * Oversees automation of Chronoforge buildings (e.g., Blast Furnace),
+ * managing time-skips when feasible, and constructing relevant items.
+ */
+function handleChronoforgeAutomation() {
+    if (!gamePage.workshop.get("chronoforge").researched) {
+        return;
+    }
+
+    const chronoforge = gamePage.timeTab.cfPanel.children[0].children;
+    const tcVal = gamePage.resPool.get("timeCrystal").value;
+    // Depending on the "1000Years" challenge, we adjust the factor used in heat checks.
+    const factor = gamePage.challenges.getChallenge("1000Years").researched ? 5 : 10;
+
+    // fastCombust is a set of conditions that make it safer or more beneficial
+    // to do rapid time-skips (like if we have excess Void or are early in a day).
+    const fastCombust = checkFastCombust(tcVal);
+
+    // The game might indicate if we are in a "Dark Future" or not, used in the original code:
+    const notDark = checkDarkFuture(); 
+    // 'notDark' isn't used further in this example, but we keep it in case
+    // future expansions need to handle dark futures differently.
+
+    // Toggles automation for the Blast Furnace if certain conditions are or aren't met.
+    handleBlastFurnaceAutomation();
+
+    // Shows progress toward building a Relic Station if that station is discovered but not researched.
+    updateRelicStationMessage();
+
+    // Checks if conditions allow for resource retrieval or big time-skips.
+    handleResourceRetrievalAndTimeSkips(chronoforge, tcVal, factor, fastCombust);
+
+    // Automates constructing other Chronoforge items if conditions allow it.
+    buildOtherChronoforgeItems(chronoforge);
+}
+
+/**
+ * Determines whether conditions are suitable for rapid "fast combustion."
+ * This typically means we have enough void resources or we are early in a day
+ * with low heat, plus at least one active Dark Nova, etc.
+ */
+function checkFastCombust(tcVal) {
+    const hasEnoughVoid = (Math.max(tcVal, 600) < gamePage.resPool.get("void").value);
+    const earlyDayLowHeat = (
+        tcVal > 45 &&
+        gamePage.calendar.day < 10 &&
+        gamePage.time.heat < gamePage.getEffect("heatMax") * 0.9
+    );
+
+    // Return true if either we have ample void or we meet day/heat conditions,
+    // plus at least one level in the "darkNova" upgrade and the correct time meta level.
+    return (
+        (hasEnoughVoid || earlyDayLowHeat) &&
+        gamePage.time.meta[0].meta[5].val >= 1 &&
+        gamePage.religion.getTU("darkNova").on > 0
+    );
+}
+
+/**
+ * Checks if the current timeline is not in a "Dark Future."
+ * This is kept for potential expansions or conditions that might matter later.
+ */
+function checkDarkFuture() {
+    // If darkFutureYears(true) < 0, it implies no dark future yet.
+    return gamePage.calendar.darkFutureYears(true) < 0;
+}
+
+/**
+ * Ensures automation for the Blast Furnace is toggled off or on as needed.
+ * Here, it's currently forced off for safety or performance reasons.
+ */
+function handleBlastFurnaceAutomation() {
+    const bf = gamePage.time.getCFU("blastFurnace");
+    if (!bf.unlocked) {
+        return;
+    }
+
+    // The original logic here permanently disables automation. 
+    if (bf.isAutomationEnabled) {
+        bf.isAutomationEnabled = false;
+    }
+
+    // Additional toggling logic (commented out) could be re-enabled if needed.
+    /*
+    if (gamePage.calendar.cycle == 5 && bf.heat < 200 && bf.isAutomationEnabled) {
+        bf.isAutomationEnabled = false;
+    } else if (!bf.isAutomationEnabled && ...) {
+        bf.isAutomationEnabled = true;
+    }
+    */
+}
+
+/**
+ * Updates a global message to show progress toward unlocking the Relic Station.
+ * Only triggers if Relic Station is discovered, not yet researched, and
+ * "paradoxalKnowledge" is available.
+ */
+function updateRelicStationMessage() {
+    const relicStation = gamePage.workshop.get("relicStation");
+    if (
+        relicStation.unlocked &&
+        !relicStation.researched &&
+        gamePage.science.get("paradoxalKnowledge").researched
+    ) {
+        const requiredAM = relicStation.prices.filter(r => r.name === 'antimatter')[0].val;
+        const currentAM = gamePage.resPool.get("antimatter").value;
+        const percent = Math.round((currentAM / requiredAM) * 100);
+        GlobalMsg['relicStation'] = relicStation.label + ' ' + percent + '%';
+    }
+}
+
+/**
+ * Manages the logic around resource retrieval (RR) and time-skips (Chronoforge "shatter").
+ * This can skip multiple years if conditions permit or do small single-year skips otherwise.
+ */
+function handleResourceRetrievalAndTimeSkips(chronoforge, tcVal, factor, fastCombust) {
+    const rr = gamePage.time.getCFU("ressourceRetrieval");
+    const rrVal = rr.val;
+
+    // Only proceed if we're not in a mode that disallows building or if we have at least 1 RR.
+    if (!switches['CollectResBReset'] || rrVal >= 1) {
+        
+        // Large skips are attempted only if we have at least some RR,
+        // and if certain conditions (like void > 800 or challenge states) are satisfied.
+        if (rrVal > 0 && (!gamePage.challenges.isActive("1000Years") ||
+                          gamePage.resPool.get("void").value > 800))
+        {
+            // This next condition ensures unobtainium, energy, timeCrystal, and
+            // other factors line up before performing multi-year skips.
+            if (shouldDoBigTimeSkips(tcVal, factor, fastCombust)) {
+                attemptMultiYearSkips(chronoforge, tcVal, factor);
             }
         }
+        // If the above was skipped, check if we can do a single-year skip
+        // under simpler conditions (like being outside cycle 5, etc.).
+        else if (
+            gamePage.calendar.cycle !== 5 &&
+            rrVal === 0 &&
+            tcVal >= 1 &&
+            gamePage.time.heat < (gamePage.getEffect("heatMax") / 2)
+        ) {
+            chronoforge[0].controller.doShatterAmt(chronoforge[0].model, 1);
+            chronoforge[0].update();
+        }
+    }
+}
 
+/**
+ * Determines if conditions allow for a "big" time skip (e.g., skipping entire cycles).
+ * Includes checks on unobtainium levels, energy production, day checks, cycle, etc.
+ */
+function shouldDoBigTimeSkips(tcVal, factor, fastCombust) {
+    // A partial breakdown of the logic used here:
+    // 1) Unobtainium is below 90% of its capacity
+    // 2) We have sufficient net energy or are at max antimatter
+    // 3) We're not on day 0
+    // 4) We pass a large bracket check of cycles, numerology perk, paragon thresholds, etc.
 
-        if (gamePage.workshop.get("turnSmoothly").researched) {
-            if ( !gamePage.time.isAccelerated && gamePage.resPool.get("temporalFlux").value >= gamePage.resPool.get("temporalFlux").maxValue) {
-                gamePage.time.isAccelerated = true
+    const unobtainiumOk = (
+        gamePage.resPool.get("unobtainium").value <
+        gamePage.resPool.get("unobtainium").maxValue * 0.9
+    );
+
+    const energyOk = (
+        (gamePage.resPool.energyProd - gamePage.resPool.energyCons >= 0) ||
+        (gamePage.resPool.get("antimatter").value >= 
+         gamePage.resPool.get("antimatter").maxValue)
+    );
+
+    const dayOk = (gamePage.calendar.day > 1);
+
+    return (
+        unobtainiumOk &&
+        energyOk &&
+        dayOk &&
+        checkTimeSkipCycleConditions(tcVal, factor, fastCombust)
+    );
+}
+
+/**
+ * Contains a complex set of logical gates determining if the game cycle,
+ * perk availability, paragon count, or heat thresholds allow major time skips.
+ * This is crucial for deciding whether to skip whole cycles or entire eras.
+ */
+function checkTimeSkipCycleConditions(tcVal, factor, fastCombust) {
+    // The following condition captures multiple sub-checks:
+    // - "numerology" research or a certain "meta[5]" level
+    // - which cycle we're in
+    // - paragon thresholds for timeCrystal usage
+    // - synergy with relicStation, sunlifter, chronosphere counts, etc.
+    // The code is intentionally verbose to ensure each sub-condition is met.
+
+    return (
+        (
+            (
+                (gamePage.calendar.cycle !== 5 &&
+                 gamePage.prestige.getPerk("numerology").researched)
+                ||
+                (
+                    gamePage.time.meta[0].meta[5].val >=
+                        (gamePage.resPool.get('paragon').value > 100 ? 1 : 3)
+                    &&
+                    tcVal >= (
+                        gamePage.resPool.get('paragon').value > 100
+                            ? 1
+                            : gamePage.time.meta[0].meta[5].val * 1000
+                    )
+                )
+            )
+            &&
+            (
+                (
+                    gamePage.calendar.cycle !== 5 &&
+                    gamePage.prestige.getPerk("numerology").researched
+                )
+                ||
+                (
+                    (
+                        gamePage.time.meta[0].meta[5].val >= 3 ||
+                        gamePage.time.heat < 50
+                    )
+                    &&
+                    gamePage.workshop.get("relicStation").unlocked &&
+                    !gamePage.workshop.get("relicStation").researched &&
+                    gamePage.science.get("paradoxalKnowledge").researched &&
+                    tcVal > (fastCombust ? 5 : 45) &&
+                    gamePage.bld.getBuildingExt('chronosphere').meta.val >= 10 &&
+                    gamePage.space.getBuilding('sunlifter').val > 0
+                )
+            )
+        )
+        ||
+        (
+            gamePage.time.meta[0].meta[5].val >=
+                (gamePage.resPool.get('paragon').value > 100 ? 1 : 3)
+            &&
+            (
+                (
+                    gamePage.time.heat === 0 &&
+                    (
+                        (gamePage.calendar.cycle !== 5 &&
+                         gamePage.prestige.getPerk("numerology").researched)
+                        ||
+                        (
+                            gamePage.calendar.season > 0 &&
+                            gamePage.time.meta[0].meta[5].val >= 3
+                        )
+                    )
+                )
+                ||
+                (
+                    (fastCombust ? true :
+                        (gamePage.time.heat + 50 * factor) < 
+                        gamePage.getEffect("heatMax")
+                    )
+                    &&
+                    tcVal > (
+                        gamePage.resPool.get('paragon').value > 100
+                            ? (gamePage.time.meta[0].meta[5].val >= 3 ? 5 : 5000)
+                            : gamePage.time.meta[0].meta[5].val * 1000
+                    )
+                    &&
+                    gamePage.calendar.cycle === 5
+                    &&
+                    (
+                        gamePage.calendar.season > 0 ||
+                        (
+                            fastCombust ||
+                            (
+                                gamePage.time.heat <
+                                    gamePage.getEffect("heatMax") * 0.5
+                                && gamePage.calendar.day < 10
+                            )
+                        )
+                    )
+                )
+            )
+        )
+    );
+}
+
+/**
+ * Attempts multiple time skips in descending order of magnitude
+ * (e.g., skipping 45 years, 5 years, or a single year) depending on
+ * current Time Crystal availability, heat thresholds, and cycle position.
+ */
+function attemptMultiYearSkips(chronoforge, tcVal, factor) {
+    const shatterBtn = chronoforge[0];
+    const heat = gamePage.time.heat;
+    const heatMax = gamePage.getEffect("heatMax");
+    const skip5Cost = shatterBtn.controller.getPricesMultiple(shatterBtn.model, 5).timeCrystal;
+    const skip45Cost = shatterBtn.controller.getPricesMultiple(shatterBtn.model, 45).timeCrystal;
+    const skip1Cost = shatterBtn.controller.getPricesMultiple(shatterBtn.model, 1).timeCrystal;
+    const cycle = gamePage.calendar.cycle;
+    const cycleYear = gamePage.calendar.cycleYear;
+    const meta5Val = gamePage.time.meta[0].meta[5].val;
+    const yearsPerCycle = gamePage.calendar.yearsPerCycle;
+    const cyclesPerEra = gamePage.calendar.cyclesPerEra;
+
+    // Various skip options: "Skip time (1)" for an entire cycle, "(2)" for multiple cycles, etc.
+    // Conditions ensure we don't overheat the timeline or exceed Time Crystal availability.
+
+    // Option 1: If heat is above 90% but we can handle cost for 5 shatters,
+    // and the cycle is not 4 or 5, attempt skipping an entire cycle.
+    if (
+        heat > heatMax * 0.9 &&
+        (factor * skip5Cost) <= heatMax &&
+        ![4, 5].includes(cycle) &&
+        meta5Val >= 1 &&
+        tcVal >= skip5Cost
+    ) {
+        if ((heatMax - heat) > (skip5Cost * factor)) {
+            gamePage.msg('Skip time (1): ' + yearsPerCycle);
+            shatterBtn.controller.doShatterAmt(shatterBtn.model, yearsPerCycle);
+            shatterBtn.update();
+        }
+    }
+    // Option 2: If we can handle 45 shatters, cycle is not 4 or our heat is below 90%,
+    // meta5Val is high enough, and we are at the start of the cycle (cycleYear==0).
+    else if (
+        (factor * skip45Cost) <= heatMax &&
+        (cycle !== 4 || heat < heatMax * 0.9) &&
+        meta5Val >= 3 &&
+        tcVal >= skip45Cost &&
+        cycleYear === 0
+    ) {
+        if (
+            (heatMax - heat) > (skip45Cost * factor) &&
+            (meta5Val >= 3 || (!gamePage.ironWill && meta5Val >= 1))
+        ) {
+            gamePage.msg('Skip time (2): ' + (yearsPerCycle * (cyclesPerEra - 1)));
+            shatterBtn.controller.doShatterAmt(shatterBtn.model, yearsPerCycle * (cyclesPerEra - 1));
+            shatterBtn.update();
+        }
+    }
+    // Option 3: If we can handle 5 shatters, and cycle not 4 or heat < 90%,
+    // we skip either the remainder of cycle 4 or an entire cycle otherwise.
+    else if (
+        (factor * skip5Cost) <= heatMax &&
+        (cycle !== 4 || heat < heatMax * 0.9) &&
+        meta5Val >= 1 &&
+        tcVal >= skip5Cost
+    ) {
+        if ((heatMax - heat) > (skip5Cost * factor)) {
+            if (cycle === 4) {
+                gamePage.msg('Skip time (4): ' + (yearsPerCycle - cycleYear));
+                shatterBtn.controller.doShatterAmt(shatterBtn.model, yearsPerCycle - cycleYear);
+                shatterBtn.update();
+            } else {
+                gamePage.msg('Skip time (3): ' + yearsPerCycle);
+                shatterBtn.controller.doShatterAmt(shatterBtn.model, yearsPerCycle);
+                shatterBtn.update();
             }
         }
+    }
+    // Option 4: Fall back to a single-year skip if we still have enough Time Crystals
+    // and enough heat margin.
+    else if (
+        tcVal >= skip1Cost &&
+        (heatMax - heat) > (skip1Cost * factor)
+    ) {
+        try {
+            shatterBtn.controller.buyItem(shatterBtn.model, {}, function(result) {
+                if (result) {
+                    shatterBtn.update();
+                }
+            });
+        } catch (err) {
+            console.log(err);
+        }
+    }
+}
 
+/**
+ * Automates building of the other Chronoforge items (indexes 1..N),
+ * respecting conditions about resource retrieval, cost thresholds, etc.
+ */
+function buildOtherChronoforgeItems(chronoforge) {
+    const rr = gamePage.time.getCFU("ressourceRetrieval");
+
+    // Only automate these if resourceRetrieval is unlocked or
+    // the Blast Furnace is unlocked but has fewer than 2 built.
+    if (
+        rr.unlocked ||
+        (gamePage.time.getCFU("blastFurnace").unlocked &&
+         gamePage.time.getCFU("blastFurnace").val < 2)
+    ) {
+        try {
+            for (let t = 1; t < chronoforge.length; t++) {
+                if (switches['CollectResBReset']) {
+                    // If a certain reset-related switch is active, skip building these items.
+                    continue;
+                }
+                handleChronoforgeItemPurchase(chronoforge, t);
+            }
+        } catch (err) {
+            console.log(err);
+        }
+    }
+}
+
+/**
+ * Decides whether to purchase a specific Chronoforge item or skip it
+ * based on cost thresholds, item indexing, or resource retrieval logic.
+ */
+function handleChronoforgeItemPurchase(chronoforge, t) {
+    const cfItem = chronoforge[t];
+    if (!cfItem.model.metadata.unlocked || !cfItem.model.enabled) {
+        return;
+    }
+    
+    // If skip conditions indicate we should not build this item, exit here.
+    if (shouldSkipChronoforgeItem(chronoforge, t)) {
+        return;
+    }
+    
+    // Otherwise, buy it and notify the user via the message log.
+    cfItem.controller.buyItem(cfItem.model, {}, function(result) {
+        if (result) {
+            cfItem.update();
+            gamePage.msg(BUILD_IN_TIME_MSG_PREFIX + cfItem.model.name);
+        }
+    });
+}
+
+/**
+ * Determines if a Chronoforge item (index t) should be skipped
+ * based on an extensive set of logic around resource retrieval levels,
+ * item cost, year thresholds, etc.
+ */
+function shouldSkipChronoforgeItem(chronoforge, t) {
+    const rr = gamePage.time.getCFU("ressourceRetrieval");
+    const rrVal = rr.val;
+    const cfItem = chronoforge[t];
+
+    // Condition A: If this item is not "ressourceRetrieval" itself,
+    // and resourceRetrieval is unlocked,
+    // and its cost is deemed too high relative to item #6's cost.
+    if (
+        cfItem.model.metadata.name !== "ressourceRetrieval" &&
+        rr.unlocked &&
+        timeCrystalCostTooHigh(cfItem, rrVal) &&
+        (rrVal <= 3 || gamePage.religion.getZU("marker").val > 1)
+    ) {
+        return true;
+    }
+
+    // Condition B: Additional checks for skipping items other than #2 or #6,
+    // factoring in game year, timeCrystal count, or if resourceRetrieval <=3
+    if (skipChronoforgeItemForYearCost(chronoforge, t, rrVal)) {
+        return true;
+    }
+
+    // Condition C: If item #7 is present, always skip.
+    if (t === 7) {
+        return true;
+    }
+
+    // Condition D: If t == 2 and we haven't built enough of item #6 to justify more #2
+    if (t === 2) {
+        const val2 = cfItem.model.metadata.val;
+        const val6 = chronoforge[6].model.metadata.val;
+        if (((Math.floor(val2 / 8) - 1) * 5) > val6) {
+            return true;
+        }
+    }
+
+    // If none of these conditions are met, the item is safe to build.
+    return false;
+}
+
+/**
+ * Checks if a Chronoforge item's timeCrystal price is too high
+ * relative to item #6's cost, factoring in resourceRetrieval level.
+ */
+function timeCrystalCostTooHigh(cfItem, rrVal) {
+    const cfTimeCrystal = cfItem.model.prices.filter(res => res.name === "timeCrystal")[0].val;
+    const currentTC = gamePage.resPool.get("timeCrystal").value;
+    // If resourceRetrieval is above 2, we limit cost by the lesser of cfTimeCrystal and currentTC.
+    // Otherwise, we just take currentTC as is.
+    const effectiveCost = (rrVal > 2) ? Math.min(cfTimeCrystal, currentTC) : currentTC;
+
+    const cfItem6 = gamePage.timeTab.cfPanel.children[0].children[6];
+    const costItem6 = cfItem6.model.prices.filter(res => res.name === 'timeCrystal')[0].val;
+    // If resourceRetrieval is over 3, multiply item #6's cost by 0.9; otherwise, use 0.05.
+    const ratio = (rrVal > 3) ? 0.9 : 0.05;
+
+    return (effectiveCost > costItem6 * ratio);
+}
+
+/**
+ * Evaluates another block of skip logic for Chronoforge items, checking
+ * conditions such as:
+ *  - If an item is not #2 or #6
+ *  - Year and timeCrystal thresholds
+ *  - Low resourceRetrieval levels
+ */
+function skipChronoforgeItemForYearCost(chronoforge, t, rrVal) {
+    if (t === 2 || t === 6) {
+        return false; // this condition doesn't apply to items #2 and #6
+    }
+
+    const year = gamePage.calendar.year;
+    const timeCrystalVal = gamePage.resPool.get("timeCrystal").value;
+    const unobtainiumMax = gamePage.resPool.get("unobtainium").maxValue;
+
+    const cfItem6 = chronoforge[6];
+    const cfItem6Price = cfItem6.model.prices.filter(res => res.name === 'timeCrystal')[0].val;
+    const thisItemPrice = chronoforge[t].model.prices.filter(res => res.name === 'timeCrystal')[0].val;
+
+    // If current year < 40000 and we have fewer than 20000 time crystals, or
+    // if this item is more expensive than item #6 by a certain ratio,
+    // or if RR is <=3, we skip building.
+    const condYearCrystal = (year < 40000 && timeCrystalVal < 20000);
+    const condPriceRatio = (
+        thisItemPrice >
+        cfItem6Price * (timeCrystalVal > (unobtainiumMax * 0.01) ? 0.1 : 0.01)
+    );
+    const condRrVal = (rrVal <= 3);
+
+    return (condYearCrystal || condPriceRatio || condRrVal);
+}
+
+/* ------------------------------------------------------------------
+ *  4. Time Acceleration (turnSmoothly)
+ * ------------------------------------------------------------------*/
+
+/**
+ * Enables temporal flux acceleration if "turnSmoothly" is researched
+ * and the temporalFlux resource is currently at maximum capacity.
+ */
+function accelerateTimeIfNeeded() {
+    if (!gamePage.workshop.get("turnSmoothly").researched) {
+        return;
+    }
+    if (
+        !gamePage.time.isAccelerated &&
+        gamePage.resPool.get("temporalFlux").value >=
+            gamePage.resPool.get("temporalFlux").maxValue
+    ) {
+        gamePage.time.isAccelerated = true;
+    }
 }
 
 function service(){
@@ -4465,7 +5052,7 @@ var runAllAutomation = setInterval(function() {
         }
 
         if (gamePage.timer.ticksTotal % 30 === 0) {
-             setTimeout(Timepage, 0);
+             setTimeout(timePage, 0);
         }
 
          if (gamePage.timer.ticksTotal % 50 === 0) {
