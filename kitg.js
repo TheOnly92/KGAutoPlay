@@ -357,7 +357,7 @@ function autoBuild() {
       else if (shouldBuildChronosphere(metadata)) {
         buyBuilding(building, controller, model);
       }
-      else if (gameState.ironWill || (gamePage.resPool.get("burnedParagon").value + gamePage.resPool.get("paragon") == 0 && (gamePage.tabs[0].children.length < 3 || gamePage.tabs[0].children[2].model.metadata.val < 30))) {
+      else if (gameState.ironWill || (gamePage.resPool.get("burnedParagon").value + gamePage.resPool.get("paragon").value == 0 && (gamePage.tabs[0].children.length < 3 || gamePage.tabs[0].children[2].model.metadata.val < 30))) {
         if (shouldBuildInIronWill(metadata, prices, gameState)) {
           buyBuilding(building, controller, model);
         }
@@ -3613,7 +3613,7 @@ function autoRefine() {
       }
     }
   }
-  else if (bonfire.model.x100Link && (game.ironWill || (gamePage.resPool.get("burnedParagon").value + gamePage.resPool.get("paragon") == 0 && gamePage.village.getKittens() <= 2)) && wood.value < wood.maxValue * 0.1) {
+  else if (bonfire.model.x100Link && (game.ironWill || (gamePage.resPool.get("burnedParagon").value + gamePage.resPool.get("paragon").value == 0 && gamePage.village.getKittens() <= 2)) && wood.value < wood.maxValue * 0.1) {
     // Special case for ironWill mode
     if (bonfire.model.x100Link.visible) {
       bonfire.model.x100Link.handler(bonfire.model);
