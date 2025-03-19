@@ -3545,11 +3545,11 @@ function energyControl() {
 /**
  * Automatically gathers catnip when certain game conditions are met
  * - Less than 40 huts
- * - Low catnip reserves (less than 100)
+ * - Low catnip reserves (less than 500)
  * - Limited gathering clicks or Iron Will mode active
  */
 function autoNip() {
-  const CATNIP_THRESHOLD = 100;
+  const CATNIP_THRESHOLD = 500;
   const FIELD_THRESHOLD = 40;
   const CLICK_THRESHOLD = 2500;
   const MESSAGE_INTERVAL = 150;
