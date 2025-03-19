@@ -2603,9 +2603,9 @@ function handleUnicornSacrifice(religionTab, resPool) {
     return;
   }
 
-  const unicornPastureBtn = gamePage.tabs[0].children.filter(res => 
-    res.model.metadata && 
-    res.model.metadata.unlocked && 
+  const unicornPastureBtn = gamePage.tabs[0].children.filter(res =>
+    res.model.metadata &&
+    res.model.metadata.unlocked &&
     res.model.metadata.name == 'unicornPasture'
   );
 
@@ -2619,7 +2619,7 @@ function handleUnicornSacrifice(religionTab, resPool) {
   const minutesToRecover = (unicornDifference / unicornProductionRate) / 60;
 
   if (minutesToRecover > 0.1 && religionTab.sacrificeBtn.model.allLink.visible) {
-    religionTab.sacrificeBtn.controller.transform(religionTab.sacrificeBtn.model, 1, {}, 
+    religionTab.sacrificeBtn.controller.transform(religionTab.sacrificeBtn.model, 1, {},
       function(result) {/* callback intentionally left empty */}
     );
   }
@@ -2636,15 +2636,15 @@ function handleAlicornSacrifice(religionTab, resPool) {
     return;
   }
 
-  const shouldSacrifice = switches['CollectResBReset'] || 
-    alicornValue > timeCrystalValue || 
+  const shouldSacrifice = switches['CollectResBReset'] ||
+    alicornValue > timeCrystalValue ||
     shouldSacrificeForTimeCrystals(timeCrystalValue);
 
   if (shouldSacrifice && religionTab.sacrificeAlicornsBtn.model.allLink.visible) {
     religionTab.sacrificeAlicornsBtn.controller.transform(
-      religionTab.sacrificeAlicornsBtn.model, 
-      1, 
-      {}, 
+      religionTab.sacrificeAlicornsBtn.model,
+      1,
+      {},
       function(result) {/* callback intentionally left empty */}
     );
   }
@@ -2677,26 +2677,26 @@ function handleTimeCrystalRefinement(religionTab, resPool) {
   const timeCrystalValue = resPool.get('timeCrystal').value;
 
   // First condition - early game refinement
-  const earlyGameCondition = !gamePage.workshop.get("relicStation").researched && 
-    (!gamePage.workshop.get("chronoforge").researched || gamePage.religion.getTU("blackNexus").on > 5) && 
+  const earlyGameCondition = !gamePage.workshop.get("relicStation").researched &&
+    (!gamePage.workshop.get("chronoforge").researched || gamePage.religion.getTU("blackNexus").on > 5) &&
     (relicValue < (gamePage.challenges.isActive("energy") ? 25 : 5) && timeCrystalValue > 50);
 
   // Second condition - late game bulk refinement
   const relicEquivalent = relicValue + (resPool.get("blackcoin").value * 1000);
-  const relicRatioEffect = gamePage.getEffect("relicRefineRatio") * 
+  const relicRatioEffect = gamePage.getEffect("relicRefineRatio") *
     gamePage.religion.getZU("blackPyramid").getEffectiveValue(gamePage);
   const potentialRelics = timeCrystalValue / 25 * (1 + relicRatioEffect);
 
-  const lateGameCondition = gamePage.calendar.year > 1000 && 
-    relicEquivalent < potentialRelics && 
-    timeCrystalValue > 1000000 && 
+  const lateGameCondition = gamePage.calendar.year > 1000 &&
+    relicEquivalent < potentialRelics &&
+    timeCrystalValue > 1000000 &&
     GlobalMsg["ressourceRetrieval"] == '';
 
   if (earlyGameCondition) {
     // Buy single TC refinement
     religionTab.refineTCBtn.controller.buyItem(
-      religionTab.refineTCBtn.model, 
-      {}, 
+      religionTab.refineTCBtn.model,
+      {},
       function(result) {
         if (result) {
           religionTab.refineTCBtn.update();
@@ -2706,9 +2706,9 @@ function handleTimeCrystalRefinement(religionTab, resPool) {
   } else if (lateGameCondition && religionTab.refineTCBtn.model.allLink.visible) {
     // Transform all TCs
     religionTab.refineTCBtn.controller.transform(
-      religionTab.refineTCBtn.model, 
-      1, 
-      {}, 
+      religionTab.refineTCBtn.model,
+      1,
+      {},
       function(result) {/* callback intentionally left empty */}
     );
   }
@@ -2741,10 +2741,10 @@ function handleZigguratUpgrades(religionTab, resPool) {
   }
 
   // Check if we should purchase upgrades
-  const shouldPurchase = sortedButtons.length < 2 || 
+  const shouldPurchase = sortedButtons.length < 2 ||
     sortedButtons.slice(sortedButtons.length - 2).some(btn => btn.model.enabled) ||
     zgUpgradeButtons[0].model.prices.filter(res => res.name == "tears")[0].val < resPool.get('tears').value * 0.1 ||
-    (zgUpgradeButtons[6].model.prices.filter(res => res.name == "tears")[0].val < resPool.get('tears').value * 0.1 && 
+    (zgUpgradeButtons[6].model.prices.filter(res => res.name == "tears")[0].val < resPool.get('tears').value * 0.1 &&
       zgUpgradeButtons[6].model.prices.filter(res => res.name == "unobtainium")[0].val < resPool.get('unobtainium').value);
 
   if (!shouldPurchase) {
@@ -2761,7 +2761,7 @@ function handleZigguratUpgrades(religionTab, resPool) {
 
     // Check if we should skip for unobtainium requirements
     const unobtainiumPrice = btn.model.prices.find(res => res.name == "unobtainium");
-    const reservedUnobtainium = gamePage.bld.getBuildingExt('chronosphere').meta.val < 10 ? 
+    const reservedUnobtainium = gamePage.bld.getBuildingExt('chronosphere').meta.val < 10 ?
       Chronosphere10SummPrices()["unobtainium"] : 0;
 
     if (unobtainiumPrice && unobtainiumPrice.val >= (resPool.get('unobtainium').value - reservedUnobtainium)) {
@@ -2769,9 +2769,9 @@ function handleZigguratUpgrades(religionTab, resPool) {
     }
 
     // Skip unicorn graveyard if we're waiting for necrocorns
-    if (btn.model.metadata.name == "unicornGraveyard" && 
-      zgUpgradeButtons[7].model.on > 0 && 
-      (zgUpgradeButtons[8].model.prices.filter(res => res.name == "necrocorn")[0].val < 200 || 
+    if (btn.model.metadata.name == "unicornGraveyard" &&
+      zgUpgradeButtons[7].model.on > 0 &&
+      (zgUpgradeButtons[8].model.prices.filter(res => res.name == "necrocorn")[0].val < 200 ||
         gamePage.diplomacy.get("leviathans").energy < gamePage.diplomacy.getMarkerCap())) {
       continue;
     }
@@ -2796,7 +2796,7 @@ function handleTearRefinement(religionTab, resPool) {
   const sorrowResource = resPool.get('sorrow');
   const tearsResource = resPool.get('tears');
 
-  if (sorrowResource.value >= sorrowResource.maxValue || 
+  if (sorrowResource.value >= sorrowResource.maxValue ||
     sorrowResource.value * 10000 >= tearsResource.value) {
     return;
   }
@@ -2804,8 +2804,8 @@ function handleTearRefinement(religionTab, resPool) {
   if (religionTab.refineBtn && religionTab.refineBtn.model.visible) {
     try {
       religionTab.refineBtn.controller.buyItem(
-        religionTab.refineBtn.model, 
-        {}, 
+        religionTab.refineBtn.model,
+        {},
         function(result) {
           if (result) {
             gamePage.msg('Refine tears: BLS(' + Math.trunc(sorrowResource.value) + ')');
@@ -2818,390 +2818,737 @@ function handleTearRefinement(religionTab, resPool) {
   }
 }
 
-let leaderAssignmentCounter = 0;
+// Tracks calls to autoAssign(), used to schedule promotions in the late game
+let kittensAssignCounter = 0;
 
 /**
- * Auto assigns new kittens to optimal jobs based on resource needs
- * and manages job reassignments to maximize efficiency
+ * Determines whether the game is in a mode (Solar Revolution or Atheism Challenge)
+ * that changes how ratios are applied or which jobs are allowed.
  */
-function autoAssign() {
-  const game = gamePage;
-  const village = game.village;
-  const resPool = game.resPool;
-  const isWinterChallenge = game.challenges.isActive("winterIsComing");
-  const isAtheismChallenge = game.challenges.isActive("atheism");
-  const hasSolarRevolution = game.religion.getRU('solarRevolution').val == 1;
-  const kittenCount = village.getKittens();
+function isSolarOrAtheismActive() {
+  return (
+    gamePage.religion.getRU("solarRevolution").val === 1 ||
+    gamePage.challenges.isActive("atheism")
+  );
+}
 
-  GlobalMsg['priorityJob'] = '';
+/**
+ * Builds a data structure that describes how each resource should be produced.
+ * Returns an object whose keys are descriptive strings (e.g., "catnip" or "wood, beam")
+ * and whose values are objects with the following properties:
+ *   - resource     (string): Name of the resource to focus on
+ *   - job          (string): Name of the job (e.g., "farmer", "woodcutter")
+ *   - ratioNoSolar (number): Priority ratio if Solar Revolution / Atheism is NOT active
+ *   - ratioSolar   (number): Priority ratio if Solar Revolution / Atheism IS active
+ */
+function buildResourcesAssign() {
+  // Future developers:
+  // Modify or expand entries here to change how resources are prioritized.
+  const resourcesAssign = {
+    "catnip": (
+      gamePage.challenges.isActive("winterIsComing") &&
+      gamePage.bld.getBuildingExt("aqueduct").meta.val < 10 &&
+      gamePage.resPool.get("catnip").value < gamePage.village.getKittens() * 100
+    )
+    // If in Winter challenge and catnip is very low, assign minimal catnip production
+    ? {
+      resource:     "catnip",
+      job:          "farmer",
+      ratioNoSolar: 0.001,
+      ratioSolar:   0.001
+    }
+    // Otherwise, if you have a few kittens or mineralHoes, produce catnip more aggressively
+    : (
+      (gamePage.village.getKittens() > 2 || gamePage.workshop.get("mineralHoes").researched)
+      ? {
+        resource:     "catnip",
+        job:          "farmer",
+        ratioNoSolar: (
+          gamePage.resPool.get("catnip").value <
+          gamePage.resPool.get("catnip").maxValue * 0.1
+        )
+        ? 9
+        : 999,
+        ratioSolar: (
+          gamePage.resPool.get("paragon").value < 200 &&
+          gamePage.bld.getBuildingExt("temple").meta.val < 1 &&
+          gamePage.village.getKittens() > 2
+        )
+        ? 0.1
+        : 1
+      }
+      : {
+        resource:     "wood",
+        job:          "woodcutter",
+        ratioNoSolar: 1,
+        ratioSolar:   1
+      }
+    ),
 
-  // Resource assignment configuration map
-  // Format: [resourceName, jobName, normalPriority, faithPriority]
-  const resourceAssignments = {
-    "catnip": getCatnipAssignment(),
-    "wood, beam": getWoodAssignment(),
-    "minerals, slab": getMineralsAssignment(),
-    "science": getScienceAssignment(),
-    "manpower, parchment": getHunterAssignment(),
-    "faith": getFaithAssignment(),
-    "coal, gold": getGeologistAssignment()
+    "wood, beam": {
+      resource:     "wood",
+      job:          "woodcutter",
+      ratioNoSolar: (
+        gamePage.resPool.get("beam").value < gamePage.resPool.get("slab").value &&
+        gamePage.resPool.get("beam").value < gamePage.resPool.get("wood").value
+      )
+      ? Math.max(
+        0.1,
+        gamePage.resPool.get("wood").value /
+        gamePage.resPool.get("wood").maxValue
+      )
+      : (
+        // If beams are over wood capacity, use an even higher ratio
+        gamePage.resPool.get("beam").value > gamePage.resPool.get("wood").maxValue
+        ? Math.max(
+          0.1,
+          // Original formula repeated from the old code
+          gamePage.resPool.get("beam").value /
+          gamePage.resPool.get("wood").maxValue /
+          (
+            (gamePage.resPool.get("wood").maxValue /
+              ((gamePage.getResourcePerTick("wood", 0) * 5) /
+                gamePage.village.getJob("woodcutter").value)
+            ) /
+            gamePage.village.getJob("woodcutter").value /
+            gamePage.village.getJob("woodcutter").value
+          )
+        )
+        : 1
+      ),
+      ratioSolar: 2
+    },
+
+    "minerals, slab": {
+      resource:     "minerals",
+      job:          "miner",
+      ratioNoSolar: (
+        gamePage.resPool.get("slab").value < gamePage.resPool.get("beam").value &&
+        gamePage.resPool.get("slab").value < gamePage.resPool.get("minerals").value
+      )
+      ? Math.max(
+        0.1,
+        gamePage.resPool.get("minerals").value /
+        gamePage.resPool.get("minerals").maxValue
+      )
+      : (
+        gamePage.resPool.get("slab").value > gamePage.resPool.get("minerals").maxValue
+        ? Math.max(
+          0.1,
+          // Original complicated expression for ratio
+          gamePage.resPool.get("slab").value /
+          gamePage.resPool.get("minerals").maxValue /
+          (
+            (gamePage.resPool.get("minerals").maxValue /
+              ((gamePage.getResourcePerTick("minerals", 0) * 5) /
+                gamePage.village.getJob("miner").value)
+            ) /
+            gamePage.village.getJob("miner").value /
+            gamePage.village.getJob("miner").value
+          )
+        )
+        : 1
+      ),
+      ratioSolar: (
+        gamePage.resPool.get("minerals").value < 275 &&
+        gamePage.challenges.isActive("winterIsComing")
+      )
+      ? 0.01
+      : 2
+    },
+
+    "science": {
+      resource:     "science",
+      job:          "scholar",
+      ratioNoSolar: (
+        gamePage.resPool.get("science").value <
+        gamePage.resPool.get("science").maxValue * 0.5
+      )
+      ? 0.5
+      : 1,
+      ratioSolar: (
+        gamePage.science.get("engineering").researched &&
+        gamePage.resPool.get("science").value > 100
+      )
+      ? 1
+      : (gamePage.village.getKittens() > 1 ? 0.1 : 0.001)
+    },
+
+    "manpower, parchment": {
+      resource:     "manpower",
+      job:          "hunter",
+      ratioNoSolar: 0.1,
+      ratioSolar: (
+        gamePage.workshopTab.visible &&
+        gamePage.resPool.get("parchment").value < 200
+      )
+      ? 0.2
+      : 1
+    },
+
+    "faith": {
+      resource:     "faith",
+      job:          "priest",
+      ratioNoSolar: (
+        // If no more religion upgrades, then fallback to a certain ratio
+        gamePage.tabs[5].rUpgradeButtons.filter(res =>
+          res.model.resourceIsLimited === false &&
+          !res.model.name.includes("(complete)") &&
+          !res.model.name.includes("(Transcend)")
+        ).length === 0
+      )
+      ? (
+        gamePage.religion.getSolarRevolutionRatio() <=
+        Math.max(
+          gamePage.religion.transcendenceTier * 0.05,
+          gamePage.getEffect("solarRevolutionLimit")
+        )
+        ? 0.1
+        : 2
+      )
+      : (
+        gamePage.religion.getSolarRevolutionRatio() <=
+        Math.max(
+          gamePage.religion.transcendenceTier * 0.05,
+          gamePage.getEffect("solarRevolutionLimit")
+        )
+        ? 1
+        : (
+          gamePage.resPool.get("faith").value /
+          gamePage.resPool.get("faith").maxValue
+        ) * 10 + 1
+      ),
+      ratioSolar: (
+        gamePage.resPool.get("faith").value < 750 &&
+        gamePage.resPool.get("gold").maxValue >= 500
+      )
+      ? 0.01
+      : 5
+    },
+
+    "coal, gold": (
+      (gamePage.resPool.get("coal").value / gamePage.resPool.get("coal").maxValue) ||
+      100
+    ) < (
+      gamePage.workshop.get("geodesy").researched
+      ? (gamePage.resPool.get("gold").value / gamePage.resPool.get("gold").maxValue)
+      : 100
+    )
+    ? {
+      resource:     "coal",
+      job:          "geologist",
+      ratioNoSolar: (
+        gamePage.resPool.get("coal").value <
+        gamePage.resPool.get("coal").maxValue * 0.99
+      )
+      ? 1
+      : 15,
+      ratioSolar: 15
+    }
+    : {
+      resource:     "gold",
+      job:          "geologist",
+      ratioNoSolar: (
+        gamePage.resPool.get("gold").value <
+        gamePage.resPool.get("gold").maxValue * 0.99
+      )
+      ? 1
+      : 15,
+      ratioSolar: 15
+    }
   };
 
-  // Adjust priorities based on building requirements
-  adjustPrioritiesForBuildings(resourceAssignments);
+  return resourcesAssign;
+}
 
-  // Convert to array and filter relevant jobs
-  const assignmentArray = Object.values(resourceAssignments);
-  const availableAssignments = assignmentArray.filter(assignment => {
-    const resourceName = assignment[0];
-    const jobName = assignment[1];
-    const jobObj = village.getJob(jobName);
-
-    return (
-      resourceName in jobObj.modifiers &&
-      jobObj.unlocked &&
-      (!isAtheismChallenge || resourceName !== 'faith')
+/**
+ * Adjusts resource/job ratios if certain resources are needed for the next building.
+ * If craftPriority indicates a building we want, but we're missing resources for it,
+ * lower the ratio to try to produce more of that resource quickly.
+ */
+function adjustRatiosForCrafting(resourcesAssign) {
+  if (!craftPriority?.[0]) {
+    return;
+  }
+  // Example usage: craftPriority might be an object describing the next building to craft
+  if (Object.keys(craftPriority[0]).length > 0) {
+    // Retrieve resources needed for that build
+    const buildPrices = gamePage.bld.getPrices(craftPriority[0]);
+    const neededResourceNames = [
+      "wood", "minerals", "beam", "slab",
+      "science", "faith", "gold", "coal",
+      "manpower", "parchment"
+    ].filter(resourceName =>
+      buildPrices.some(price => price.name === resourceName)
     );
-  });
 
-  // Sort jobs by priority
-  const prioritizedAssignments = sortJobsByPriority(availableAssignments);
+    neededResourceNames.forEach((resName) => {
+      const requiredValue = buildPrices.find(price => price.name === resName)?.val ?? 0;
+      if (gamePage.resPool.get(resName).value < requiredValue) {
+        // Find the resourcesAssign key that includes this resource in the string
+        const matchingKey = Object.keys(resourcesAssign)
+          .find(k => k.includes(resName));
 
-  // Assign free kittens or reassign workers
-  assignKittens(prioritizedAssignments);
-
-  // Handle leader assignment and promotion
-  handleLeadership(prioritizedAssignments);
-
-  // Helper functions
-
-  function getCatnipAssignment() {
-    if (isWinterChallenge && 
-      game.bld.getBuildingExt('aqueduct').meta.val < 10 && 
-      resPool.get("catnip").value < kittenCount * 100) {
-      return ["catnip", "farmer", 0.001, 0.001];
-    } else if (kittenCount > 2 || game.workshop.get("mineralHoes").researched) {
-      const catnipLow = resPool.get("catnip").value < resPool.get("catnip").maxValue * 0.1;
-      const earlyGame = resPool.get('paragon').value < 200 && 
-        game.bld.getBuildingExt('temple').meta.val < 1 && 
-        kittenCount > 2;
-      return ["catnip", "farmer", catnipLow ? 9 : 999, earlyGame ? 0.1 : 1];
-    } else {
-      return ["wood", "woodcutter", 1, 1];
-    }
-  }
-
-  function getWoodAssignment() {
-    const wood = resPool.get("wood");
-    const beam = resPool.get("beam");
-    const slab = resPool.get("slab");
-    let priority = 1;
-
-    if (beam.value < slab.value && beam.value < wood.value) {
-      priority = Math.max(0.1, wood.value / wood.maxValue);
-    } else if (beam.value > wood.maxValue) {
-      const woodcutterCount = village.getJob('woodcutter').value;
-      const woodPerTick = game.getResourcePerTick("wood", 0) * 5;
-      // Simplified this complex calculation
-      priority = Math.max(0.1, beam.value / wood.maxValue / 
-        ((wood.maxValue / (woodPerTick / woodcutterCount)) / 
-          woodcutterCount / woodcutterCount));
-    }
-
-    return ["wood", "woodcutter", priority, 2];
-  }
-
-  function getMineralsAssignment() {
-    const minerals = resPool.get("minerals");
-    const slab = resPool.get("slab");
-    const beam = resPool.get("beam");
-    let priority = 1;
-    let faithFactor = isWinterChallenge && minerals.value < 275 ? 0.01 : 2;
-
-    if (slab.value < beam.value && slab.value < minerals.value) {
-      priority = Math.max(0.1, minerals.value / minerals.maxValue);
-    } else if (slab.value > minerals.maxValue) {
-      const minerCount = village.getJob('miner').value;
-      const mineralsPerTick = game.getResourcePerTick("minerals", 0) * 5;
-      // Simplified this complex calculation
-      priority = Math.max(0.1, slab.value / minerals.maxValue / 
-        ((minerals.maxValue / (mineralsPerTick / minerCount)) / 
-          minerCount / minerCount));
-    }
-
-    return ["minerals", "miner", priority, faithFactor];
-  }
-
-  function getScienceAssignment() {
-    const science = resPool.get("science");
-    const scienceLow = science.value < science.maxValue * 0.5;
-    const earlyGame = !game.science.get('engineering').researched || science.value <= 100;
-    const faithPriority = earlyGame ? (kittenCount > 1 ? 0.1 : 0.001) : 1;
-
-    return ["science", "scholar", scienceLow ? 0.5 : 1, faithPriority];
-  }
-
-  function getHunterAssignment() {
-    const needParchment = game.workshopTab.visible && resPool.get("parchment").value < 200;
-    return ["manpower", "hunter", 0.1, needParchment ? 0.2 : 1];
-  }
-
-  function getFaithAssignment() {
-    const faith = resPool.get("faith");
-    const noMoreUpgrades = game.tabs[5].rUpgradeButtons.filter(res => 
-      !res.model.resourceIsLimited && 
-      !res.model.name.includes('(complete)') && 
-      !res.model.name.includes('(Transcend)')
-    ).length === 0;
-
-    const solarRevRatio = game.religion.getSolarRevolutionRatio();
-    const solarRevLimit = Math.max(game.religion.transcendenceTier * 0.05, game.getEffect("solarRevolutionLimit"));
-    const atSolarLimit = solarRevRatio <= solarRevLimit;
-
-    let priority, faithFactor;
-
-    if (noMoreUpgrades) {
-      priority = atSolarLimit ? 0.1 : 2;
-    } else {
-      priority = atSolarLimit ? 1 : (faith.value / faith.maxValue * 10 + 1);
-    }
-
-    faithFactor = (faith.value < 750 && resPool.get("gold").maxValue >= 500) ? 0.01 : 5;
-
-    return ["faith", "priest", priority, faithFactor];
-  }
-
-  function getGeologistAssignment() {
-    const coal = resPool.get("coal");
-    const gold = resPool.get("gold");
-    const coalRatio = coal.value / coal.maxValue || 100;
-    const goldRatio = game.workshop.get("geodesy").researched ? gold.value / gold.maxValue : 100;
-
-    if (coalRatio < goldRatio) {
-      return ["coal", "geologist", coal.value < coal.maxValue * 0.99 ? 1 : 15, 15];
-    } else {
-      return ["gold", "geologist", gold.value < gold.maxValue * 0.99 ? 1 : 15, 15];
-    }
-  }
-
-  function adjustPrioritiesForBuildings(assignments) {
-    if (!craftPriority || Object.keys(craftPriority[0]).length === 0) {
-      return;
-    }
-
-    const buildingPrices = game.bld.getPrices(craftPriority[0]).map(elem => elem.name);
-    const resourcesNeeded = ["wood", "minerals", "beam", "slab", "science", "faith", "gold", "coal", "manpower", "parchment"]
-      .filter(resource => buildingPrices.includes(resource));
-
-    if (resourcesNeeded.length === 0) {
-      return;
-    }
-
-    resourcesNeeded.forEach(resource => {
-      const resourcePrice = game.bld.getPrices(craftPriority[0])
-        .find(price => price.name === resource);
-
-      if (resPool.get(resource).value < resourcePrice.val) {
-        const relevantAssignmentKey = Object.keys(assignments)
-          .find(key => key.includes(resource));
-
-        if (relevantAssignmentKey) {
-          assignments[relevantAssignmentKey][2] = 0.1;
-          assignments[relevantAssignmentKey][3] = 0.1;
+        if (matchingKey) {
+          // Force a low ratio to encourage producing this resource
+          resourcesAssign[matchingKey].ratioNoSolar = 0.1;
+          resourcesAssign[matchingKey].ratioSolar   = 0.1;
         }
       }
     });
   }
+}
 
-  function sortJobsByPriority(jobList) {
-    return jobList.sort((a, b) => {
-      const getJobMetrics = (assignment) => {
-        const [resourceName, jobName, normalPriority, faithPriority] = assignment;
-        const resource = resPool.get(resourceName);
-        const jobObj = village.getJob(jobName);
-        const isFull = resource.value >= resource.maxValue;
-
-        const priorityFactor = (hasSolarRevolution || isAtheismChallenge) ? 
-          normalPriority : faithPriority;
-
-        // Calculate resource metrics
-        let resourceTick, jobCount;
-
-        if (isFull) {
-          resourceTick = resource.maxValue * 10;
-          jobCount = priorityFactor;
-        } else {
-          resourceTick = game.calcResourcePerTick(resourceName) + 1;
-          jobCount = jobObj.value + 1;
-        }
-
-        // Calculate overall score
-        return {
-          priority: priorityFactor,
-          score: ((resourceTick / resource.maxValue) * 
-            (resource.value / resource.maxValue) * 
-            (priorityFactor * jobCount)) * priorityFactor
-        };
-      };
-
-      const aMetrics = getJobMetrics(a);
-      const bMetrics = getJobMetrics(b);
-
-      return aMetrics.score - bMetrics.score;
+/**
+ * Returns a list of valid resource-to-job assignments.
+ * "Valid" means the job is unlocked, the resource is relevant to that job's modifiers,
+ * and it is not disallowed by the Atheism challenge (e.g., no priests if Atheism is active).
+ */
+function getValidAssignments(resourcesAssign) {
+  return Object.values(resourcesAssign)
+    .filter(({ resource, job }) => {
+      const jobData = gamePage.village.getJob(job);
+      if (!jobData || !jobData.unlocked) {
+        return false;
+      }
+      if (gamePage.challenges.isActive("atheism") && resource === "faith") {
+        return false;
+      }
+      // The original code checked `resource in job.modifiers`.
+      // Ensures job actually produces that resource
+      return (resource in jobData.modifiers);
     });
+}
+
+/**
+ * Sort comparison to determine which assignment "needs" more workers.
+ * A lower computed value means higher priority (more needed).
+ * This logic is carried over from the original code but uses named properties.
+ */
+function sortJobAssignments(a, b) {
+  const {
+    resource: aResource,
+    job: aJobName,
+    ratioNoSolar: aRatioNoSolar,
+    ratioSolar: aRatioSolar
+  } = a;
+
+  const {
+    resource: bResource,
+    job: bJobName,
+    ratioNoSolar: bRatioNoSolar,
+    ratioSolar: bRatioSolar
+  } = b;
+
+  const aJob = gamePage.village.getJob(aJobName);
+  const bJob = gamePage.village.getJob(bJobName);
+
+  // Decide which ratio to use based on whether solar revolution / atheism is active
+  const isSolar = isSolarOrAtheismActive();
+  const aRatio = isSolar ? aRatioSolar : aRatioNoSolar;
+  const bRatio = isSolar ? bRatioSolar : bRatioNoSolar;
+
+  let aTick, aJobsCount;
+  const aResourceObj = gamePage.resPool.get(aResource);
+  if (aResourceObj.value >= aResourceObj.maxValue) {
+    // If the resource is at or above capacity, treat tick as "maxValue * 10" (a big number).
+    aTick      = aResourceObj.maxValue * 10;
+    aJobsCount = aRatio;
+  } else {
+    // If not at capacity, compute actual resource production plus 1
+    aTick      = gamePage.calcResourcePerTick(aResource) + 1;
+    aJobsCount = (aJob?.value ?? 0) + 1;
   }
 
-  function assignKittens(prioritizedJobs) {
-    if (prioritizedJobs.length === 0) return;
-
-    const topJob = prioritizedJobs[0];
-    GlobalMsg['priorityJob'] = topJob[1];
-    const freeKittens = village.getFreeKittens();
-
-    if (freeKittens > 0) {
-      // Assign free kittens to top priority job
-      village.assignJob(village.getJob(topJob[1]), 1);
-    } else if (kittenCount > 0) {
-      // Reassign from low priority to high priority
-      const jobsToReduceFrom = prioritizedJobs.filter(job => {
-        const resourceName = job[0];
-        const jobName = job[1];
-        const resource = resPool.get(resourceName);
-        const jobObj = village.getJob(jobName);
-
-        const isFull = resource.value >= resource.maxValue;
-        const minWorkers = isFull ? 1 : kittenCount / 2 / 7;
-
-        return jobObj.value > minWorkers;
-      });
-
-      if (jobsToReduceFrom.length > 0) {
-        const jobToReduce = jobsToReduceFrom[jobsToReduceFrom.length - 1];
-        const jobName = jobToReduce[1];
-        const currentWorkers = village.getJob(jobName).value;
-        const workersToReassign = Math.max(Math.floor(currentWorkers * 0.1), 1);
-
-        if (workersToReassign > 0) {
-          village.sim.removeJob(jobName, workersToReassign);
-          village.assignJob(village.getJob(topJob[1]), workersToReassign);
-        }
-      }
-    }
+  let bTick, bJobsCount;
+  const bResourceObj = gamePage.resPool.get(bResource);
+  if (bResourceObj.value >= bResourceObj.maxValue) {
+    bTick      = bResourceObj.maxValue * 10;
+    bJobsCount = bRatio;
+  } else {
+    bTick      = gamePage.calcResourcePerTick(bResource) + 1;
+    bJobsCount = (bJob?.value ?? 0) + 1;
   }
 
-  function handleLeadership(prioritizedJobs) {
-    if (!game.science.get('civil').researched || 
-      game.ironWill || 
-      resPool.get("gold").value <= 1000 ||
-      prioritizedJobs.length === 0) {
-      return;
+  // Recreates the original formula for "priority value."
+  // The lower the final value => the more we need to assign workers to that job.
+  // aVal vs. bVal => if aVal is smaller, 'a' is more urgent.
+  const aVal = (
+    (aTick / aResourceObj.maxValue) *
+    (aResourceObj.value / aResourceObj.maxValue) *
+    (aRatio * aJobsCount)
+  ) * aRatio;
+
+  const bVal = (
+    (bTick / bResourceObj.maxValue) *
+    (bResourceObj.value / bResourceObj.maxValue) *
+    (bRatio * bJobsCount)
+  ) * bRatio;
+
+  return aVal - bVal;
+}
+
+/**
+ * Attempts to assign a free kitten to the highest-priority job if available.
+ * If no free kittens remain, tries to reassign from the lowest-priority job
+ * that has a decent number of workers.
+ */
+function autoAllocateKittens(sortedJobs) {
+  if (!sortedJobs.length) {
+    return;
+  }
+
+  const freeKittens  = gamePage.village.getFreeKittens();
+  const totalKittens = gamePage.village.getKittens();
+  const topJob       = sortedJobs[0].job;  // job name of the top priority
+
+  if (freeKittens > 0) {
+    // If there's at least one free kitten, assign it to the top job.
+    const topJobData = gamePage.village.getJob(topJob);
+    if (topJobData) {
+      gamePage.village.assignJob(topJobData, 1);
     }
+    return;
+  }
 
-    leaderAssignmentCounter++;
+  // If no free kittens are available, look for a job from which we can reassign some kittens.
+  if (totalKittens > 0) {
+    // We'll consider reassigning from the job with the lowest priority
+    // that also exceeds a minimal threshold of workers.
+    const reassignableJobs = sortedJobs.filter(({ resource, job }) => {
+      const jobData = gamePage.village.getJob(job);
+      if (!jobData) {
+        return false;
+      }
+      const currentJobCount = jobData.value;
 
-    if (leaderAssignmentCounter > 10) {
-      const topJobName = prioritizedJobs[0][1];
-      const bestKitten = village.sim.kittens
-        .filter(kitten => kitten.job === topJobName)
-        .sort((a, b) => b.skills[topJobName] - a.skills[topJobName])[0];
+      const resourceValue = gamePage.resPool.get(resource).value;
+      const resourceMax   = gamePage.resPool.get(resource).maxValue;
 
-      if (bestKitten) {
-        village.makeLeader(bestKitten);
+      // If resource is at or above capacity, keep at least 1 worker
+      // otherwise keep some fraction (arbitrary heuristic).
+      const threshold = (resourceValue >= resourceMax)
+        ? 1
+        : (totalKittens / 2 / 7);
 
-        const canPromote = village.sim.expToPromote(
-          bestKitten.rank, bestKitten.rank + 1, bestKitten.exp
-        )[0];
+      return currentJobCount > threshold && job !== topJob;
+    });
 
-        const promotionCost = village.sim.goldToPromote(
-          bestKitten.rank, bestKitten.rank + 1, resPool.get("gold").value
-        )[1];
+    if (reassignableJobs.length > 0) {
+      // The last item in sortedJobs is the *lowest priority*.
+      // So we pull from that job to give to the top job.
+      const { job: lowestJobName } = reassignableJobs[reassignableJobs.length - 1];
+      const lowestJobData = gamePage.village.getJob(lowestJobName);
 
-        const affordablePromotion = promotionCost < resPool.get("gold").value * 0.3;
+      if (lowestJobData) {
+        // For example, remove 10% of that job's workers (at least 1).
+        const removeCount = Math.max(Math.floor(lowestJobData.value * 0.1), 1);
+        gamePage.village.sim.removeJob(lowestJobName, removeCount);
 
-        if (canPromote && affordablePromotion) {
-          village.sim.promote(bestKitten);
+        // Assign them to the top priority job.
+        const topJobData = gamePage.village.getJob(topJob);
+        if (topJobData) {
+          gamePage.village.assignJob(topJobData, removeCount);
         }
       }
-
-      leaderAssignmentCounter = 0;
     }
   }
 }
 
-var bldSmelter = gamePage.bld.buildingsData[15];
-var bldBioLab = gamePage.bld.buildingsData[9];
-var bldOilWell = gamePage.bld.buildingsData[20];
-var bldFactory = gamePage.bld.buildingsData[22];
-var bldCalciner = gamePage.bld.buildingsData[16];
-var bldAccelerator = gamePage.bld.buildingsData[24];
-var bldWarehouse = gamePage.bld.buildingsData[11];
+/**
+ * Every so often, promotes a kitten from the top-priority job to be the leader,
+ * if we have enough gold and certain tech (civil) is researched.
+ */
+function maybePromoteKittens(topJob) {
+  // Must have civil researched and not be in Iron Will.
+  if (!gamePage.science.get("civil").researched) return;
+  if (gamePage.ironWill) return;
 
-var spcContChamber = gamePage.space.meta[5].meta[1];
-var spcMoonBase = gamePage.space.meta[2].meta[1];
-var spcEntangler = gamePage.space.meta[10].meta[0];
-var spcSpaceStation = gamePage.space.meta[1].meta[2];
-var spcLunarOutpost = gamePage.space.meta[2].meta[0];
-var spcOrbitalArray = gamePage.space.meta[4].meta[1];
+  // Must have enough gold to justify promotions.
+  if (gamePage.resPool.get("gold").value <= 1000) return;
 
- // These are the assorted variables
-var proVar = gamePage.resPool.energyProd;
-var conVar = gamePage.resPool.energyCons;
-var FreeEnergy = 0;
-// Control Energy Consumption
+  // Count calls to autoAssign. Only promote once every 10 calls (arbitrary).
+  kittensAssignCounter++;
+  if (kittensAssignCounter <= 10) {
+    return;
+  }
+  // Reset the counter after a promotion attempt
+  kittensAssignCounter = 0;
+
+  // Among all kittens with the top job, choose the one with the highest skill for that job
+  const bestKitten = gamePage.village.sim.kittens
+    .filter(kitten => kitten.job === topJob)
+    .sort((a, b) => (b.skills[topJob] || 0) - (a.skills[topJob] || 0))[0];
+
+  if (!bestKitten) {
+    return;
+  }
+
+  // Make that kitten your leader
+  gamePage.village.makeLeader(bestKitten);
+
+  // Check if we can afford to promote them to the next rank
+  const [canPromote] = gamePage.village.sim.expToPromote(
+    bestKitten.rank,
+    bestKitten.rank + 1,
+    bestKitten.exp
+  );
+  const [, goldRequired] = gamePage.village.sim.goldToPromote(
+    bestKitten.rank,
+    bestKitten.rank + 1,
+    gamePage.resPool.get("gold").value
+  );
+
+  // Only promote if we have enough gold (<= 30% of current gold).
+  if (canPromote && goldRequired < gamePage.resPool.get("gold").value * 0.3) {
+    gamePage.village.sim.promote(bestKitten);
+  }
+}
+
+/**
+ * Main auto-assign function.
+ * 1) Builds the resource->job config
+ * 2) Adjusts priorities based on building requirements
+ * 3) Filters out locked or invalid jobs
+ * 4) Sorts remaining jobs by need
+ * 5) Allocates or reallocates kittens
+ * 6) Possibly promotes a kitten in the top job to leader
+ */
+function autoAssign() {
+  // 1) Base config
+  const resourcesAssign = buildResourcesAssign();
+
+  // 2) Adjust priorities if certain resources are lacking for the next build
+  adjustRatiosForCrafting(resourcesAssign);
+
+  // 3) Filter to valid/unlocked jobs
+  const validAssignments = getValidAssignments(resourcesAssign);
+
+  // 4) Sort those assignments by need (lowest value => highest priority)
+  const sortedAssignments = validAssignments.sort(sortJobAssignments);
+
+  // 5) Assign or reassign kittens to the top priority
+  autoAllocateKittens(sortedAssignments);
+
+  // 6) Attempt to promote a kitten from the top-priority job
+  if (sortedAssignments.length > 0) {
+    maybePromoteKittens(sortedAssignments[0].job);
+  }
+}
+
+/**
+ * Controls energy consumption by prioritizing buildings based on their importance.
+ * Turns buildings on or off to maintain optimal energy balance.
+ */
 function energyControl() {
-  if (switches["Energy Control"]){
-    // 0 = building data
-    // 1 = priority
-    // 2 = building control
-    var EnergyPriority = [
-      [gamePage.challenges.isActive("postApocalypse") ? null : bldSmelter, 0.09,gamePage.tabs[0].children.find(o => o.model.metadata && o.model.metadata.name == 'smelter')],
-      [gamePage.challenges.isActive("postApocalypse") ? null : bldOilWell, (gamePage.bld.getBuildingExt('library').meta.stage == 1 && gamePage.bld.getBuildingExt('biolab').meta.on != gamePage.bld.getBuildingExt('biolab').meta.val) ? 9999 :  0.3 ,gamePage.tabs[0].children.find(o => o.model.metadata && o.model.metadata.name == "oilWell")],
-      [bldBioLab, (gamePage.science.get('antimatter').researched && gamePage.resPool.get("antimatter").value < gamePage.resPool.get("antimatter").maxValue*0.2) ? 0.3 : Math.max(0.2,gamePage.calcResourcePerTick('oil') * 5 / gamePage.resPool.get('oil').maxValue * 100 * (gamePage.resPool.get("oil").value / gamePage.resPool.get("oil").maxValue))* (gamePage.space.meta[3].meta[1].val +1),gamePage.tabs[0].children.find(o => o.model.metadata && o.model.metadata.name == "biolab")],
-      (gamePage.ironWill && Math.min(Math.floor(gamePage.resPool.get('coal').value /(gamePage.resPool.get('coal').maxValue / gamePage.bld.getBuildingExt('calciner').meta.val)), Math.floor(gamePage.resPool.get('minerals').value / 1000)) < gamePage.bld.getBuildingExt('calciner').meta.val ) ? [gamePage.challenges.isActive("postApocalypse") ? null : bldSmelter, 0.09,gamePage.tabs[0].children.find(o => o.model.metadata && o.model.metadata.name == 'smelter')] : [gamePage.challenges.isActive("postApocalypse") ? null : bldCalciner, 0.101,gamePage.tabs[0].children.find(o => o.model.metadata && o.model.metadata.name == "calciner")],
-      [bldAccelerator, 0.09, gamePage.tabs[0].children.find(o => o.model.metadata && o.model.metadata.name == "accelerator")],
-      [gamePage.tabs[6].planetPanels[1] ? spcMoonBase: null, 0.2, gamePage.tabs[6].planetPanels[1] ? gamePage.tabs[6].planetPanels[1].children[1]: null],
-      [gamePage.tabs[6].planetPanels[0] ? spcSpaceStation: null, 0.09, gamePage.tabs[6].planetPanels[0]  ? gamePage.tabs[6].planetPanels[0].children[2]: null],
-      [bldFactory, 0.01, gamePage.tabs[0].children.find(o => o.model.metadata && o.model.metadata.name == "factory")],
-      [gamePage.tabs[6].planetPanels[1] ? (gamePage.resPool.get('uranium').value > 1000 ? spcLunarOutpost: null) : null, 0.01, gamePage.tabs[6].planetPanels[1]  ? (gamePage.resPool.get('uranium').value > 1000 ? gamePage.tabs[6].planetPanels[1].children[0] : null): null],
-      [gamePage.tabs[6].planetPanels[3] ? spcOrbitalArray : null, 0.01, gamePage.tabs[6].planetPanels[3]  ? gamePage.tabs[6].planetPanels[3].children[1]: null],
-      [gamePage.tabs[6].planetPanels[9] ? gamePage.space.meta[10].meta[0] : null, 0.1, gamePage.tabs[6].planetPanels[9]  ? gamePage.tabs[6].planetPanels[9].children[0]: null],
-      [gamePage.bld.getBuildingExt('warehouse').meta.stage == 0 ? null : bldWarehouse, 0.3, gamePage.tabs[0].children.find(o => o.model.metadata && o.model.metadata.name == 'warehouse')],
-      [gamePage.science.get('voidSpace').researched ? gamePage.time.voidspaceUpgrades[4] : null, 0.1, gamePage.tabs[7] && gamePage.tabs[7].children[3] ? gamePage.tabs[7].children[3].children[0].children[5] : null],
-    ];
+  if (!switches["Energy Control"]) {
+    return;
+  }
 
-    if (gamePage.science.get('antimatter') && gamePage.resPool.get("antimatter").value < gamePage.resPool.get("antimatter").maxValue*0.9 && gamePage.space.meta[5].meta[1].on > 1){
-      // Antimatter less than max storage then reduce containment chamber
-      var sunlifter = gamePage.tabs[6].planetPanels[4].children[0];
-      var empty = gamePage.resPool.get("antimatter").maxValue - gamePage.resPool.get("antimatter").value;
-      if (sunlifter.model.on*50*1.05 < empty) {
-        // gamePage.space.meta[5].meta[1].on = gamePage.space.meta[5].meta[1].on-1;
-        gamePage.tabs[6].planetPanels[4].children[1].controller.off(gamePage.tabs[6].planetPanels[4].children[1].model, 1);
-      }
-    } else {
-      EnergyPriority.push([gamePage.tabs[6].planetPanels[4] ? spcContChamber : null, (gamePage.science.get('antimatter').researched && gamePage.resPool.get("antimatter").value >= gamePage.resPool.get("antimatter").maxValue*0.9 && gamePage.space.meta[5].meta[1].val > 1) ? Math.max(0.05, (1 - gamePage.resPool.get("antimatter").value/gamePage.resPool.get("antimatter").maxValue )/10): 9999,gamePage.tabs[6].planetPanels[4] ? gamePage.tabs[6].planetPanels[4].children[1] : null]);
+  // Get current energy production and consumption
+  const energyProduction = gamePage.resPool.energyProd;
+  const energyConsumption = gamePage.resPool.energyCons;
+  const energyDifference = energyProduction - energyConsumption;
+
+  // Check if post-apocalypse challenge is active
+  const isPostApocalypse = gamePage.challenges.isActive("postApocalypse");
+
+  // Helper function to get building controller by name from buildings tab
+  const getBuildingController = name =>
+    gamePage.tabs[0].children.find(o => o.model.metadata && o.model.metadata.name === name);
+
+  // Helper function to get space building controller
+  const getSpaceController = (planetIndex, buildingIndex) => {
+    const planetPanel = gamePage.tabs[6].planetPanels[planetIndex];
+    return planetPanel ? planetPanel.children[buildingIndex] : null;
+  };
+
+  // Resource-related conditions
+  const resources = gamePage.resPool;
+  const antimatterNearFull = resources.get("antimatter").value >= resources.get("antimatter").maxValue * 0.9;
+  const antimatterLow = resources.get("antimatter").value < resources.get("antimatter").maxValue * 0.2;
+  const uraniumAbundant = resources.get("uranium").value > 1000;
+  const oilRatio = resources.get("oil").value / resources.get("oil").maxValue;
+
+  // Research conditions
+  const hasAntimatterResearch = gamePage.science.get('antimatter').researched;
+  const hasVoidSpaceResearch = gamePage.science.get('voidSpace').researched;
+
+  // Building metadata
+  const isBiolabStage1 = gamePage.bld.getBuildingExt('library').meta.stage === 1;
+  const biolabNotFullyOn = gamePage.bld.getBuildingExt('biolab').meta.on !== gamePage.bld.getBuildingExt('biolab').meta.val;
+  const isWarehouseAdvanced = gamePage.bld.getBuildingExt('warehouse').meta.stage !== 0;
+
+  // Buildings and their controllers
+  const buildings = {
+    smelter: {
+      building: isPostApocalypse ? null : gamePage.bld.buildingsData[15],
+      controller: getBuildingController('smelter'),
+      priority: 0.09
+    },
+    bioLab: {
+      building: gamePage.bld.buildingsData[9],
+      controller: getBuildingController('biolab'),
+      priority: antimatterLow && hasAntimatterResearch ? 0.3 :
+      Math.max(0.2, gamePage.calcResourcePerTick('oil') * 5 / resources.get('oil').maxValue * 100 * oilRatio) *
+      (gamePage.space.meta[3].meta[1].val + 1)
+    },
+    oilWell: {
+      building: isPostApocalypse ? null : gamePage.bld.buildingsData[20],
+      controller: getBuildingController("oilWell"),
+      priority: (isBiolabStage1 && biolabNotFullyOn) ? 9999 : 0.3
+    },
+    calciner: {
+      building: isPostApocalypse ? null : gamePage.bld.buildingsData[16],
+      controller: getBuildingController("calciner"),
+      priority: 0.101
+    },
+    accelerator: {
+      building: gamePage.bld.buildingsData[24],
+      controller: getBuildingController("accelerator"),
+      priority: 0.09
+    },
+    factory: {
+      building: gamePage.bld.buildingsData[22],
+      controller: getBuildingController("factory"),
+      priority: 0.01
+    },
+    warehouse: {
+      building: isWarehouseAdvanced ? gamePage.bld.buildingsData[11] : null,
+      controller: getBuildingController('warehouse'),
+      priority: 0.3
     }
+  };
 
-    proVar = gamePage.resPool.energyProd;
-    conVar = gamePage.resPool.energyCons;
-    FreeEnergy = Math.abs(proVar - conVar);
+  // Space buildings and their controllers
+  const spaceBuildings = {
+    moonBase: {
+      building: gamePage.space.meta[2].meta[1],
+      controller: getSpaceController(1, 1),
+      priority: 0.2,
+      available: !!gamePage.tabs[6].planetPanels[1]
+    },
+    spaceStation: {
+      building: gamePage.space.meta[1].meta[2],
+      controller: getSpaceController(0, 2),
+      priority: 0.09,
+      available: !!gamePage.tabs[6].planetPanels[0]
+    },
+    lunarOutpost: {
+      building: gamePage.space.meta[2].meta[0],
+      controller: getSpaceController(1, 0),
+      priority: 0.01,
+      available: !!gamePage.tabs[6].planetPanels[1] && uraniumAbundant
+    },
+    orbitalArray: {
+      building: gamePage.space.meta[4].meta[1],
+      controller: getSpaceController(3, 1),
+      priority: 0.01,
+      available: !!gamePage.tabs[6].planetPanels[3]
+    },
+    entangler: {
+      building: gamePage.space.meta[10].meta[0],
+      controller: getSpaceController(9, 0),
+      priority: 0.1,
+      available: !!gamePage.tabs[6].planetPanels[9]
+    },
+    containmentChamber: {
+      building: gamePage.space.meta[5].meta[1],
+      controller: getSpaceController(4, 1),
+      priority: (hasAntimatterResearch && antimatterNearFull && gamePage.space.meta[5].meta[1].val > 1) ?
+      Math.max(0.05, (1 - resources.get("antimatter").value / resources.get("antimatter").maxValue) / 10) : 9999,
+      available: !!gamePage.tabs[6].planetPanels[4] && !(hasAntimatterResearch && resources.get("antimatter").value < resources.get("antimatter").maxValue * 0.9)
+    }
+  };
 
-    if (proVar>conVar) {
-      // Energy is positive then turn on some stuff
-      EnergyInc = EnergyPriority.filter(res => res[0] && res[0].val > res[0].on && (proVar > (conVar + res[0].effects.energyConsumption * gamePage.resPool.getEnergyConsumptionRatio() ) || (res[2].model.metadata.name == "containmentChamber" && gamePage.resPool.get("antimatter").value >= gamePage.resPool.get("antimatter").maxValue * 0.9 )  ) ).sort(function(a, b) {
-        return a[1] - b[1];
-      });
-      if (EnergyInc.length > 0){
-        var onNum = Math.min(Math.floor(FreeEnergy / (EnergyInc[0][0].effects.energyConsumption * gamePage.resPool.getEnergyConsumptionRatio()) ), EnergyInc[0][0].val -  EnergyInc[0][0].on);
-        EnergyInc[0][2].controller.on(EnergyInc[0][2].model, onNum);
+  // Special case for void space
+  const voidSpace = {
+    building: hasVoidSpaceResearch ? gamePage.time.voidspaceUpgrades[4] : null,
+    controller: gamePage.tabs[7] && gamePage.tabs[7].children[3] ?
+    gamePage.tabs[7].children[3].children[0].children[5] : null,
+    priority: 0.1
+  };
+
+  // Handle special case for calciner in Iron Will mode
+  if (gamePage.ironWill) {
+    const calcinerCount = gamePage.bld.getBuildingExt('calciner').meta.val;
+    const coalLimit = Math.floor(resources.get('coal').value / (resources.get('coal').maxValue / calcinerCount));
+    const mineralsLimit = Math.floor(resources.get('minerals').value / 1000);
+
+    if (Math.min(coalLimit, mineralsLimit) < calcinerCount) {
+      buildings.calciner.building = null;
+      if (!isPostApocalypse) {
+        buildings.smelter.priority = 0.09; // Prioritize smelter when low on resources in Iron Will
       }
-    } else if (proVar<conVar) {
-      // Energy is negative then turn off some stuff
-      EnergyDec = EnergyPriority.filter(res => res[0] && res[0].on > 1 && res[0].effects !== undefined && "energyConsumption" in res[0].effects && res[0].effects.energyConsumption * gamePage.resPool.getEnergyConsumptionRatio() > 0 && proVar < conVar).sort(function (a, b) {
-        return b[1] - a[1];
-      });
-      if (EnergyDec.length > 0){
-        var onNum = Math.min(EnergyDec[0][0].on - 1, Math.min(Math.ceil(FreeEnergy / (EnergyDec[0][0].effects.energyConsumption * gamePage.resPool.getEnergyConsumptionRatio()) ), EnergyDec[0][0].on));
-        EnergyDec[0][2].controller.off(EnergyDec[0][2].model, onNum);
+    }
+  }
+
+  // Special case for containment chamber when antimatter is low
+  if (hasAntimatterResearch && resources.get("antimatter").value < resources.get("antimatter").maxValue * 0.9 &&
+    gamePage.space.meta[5].meta[1].on > 1) {
+    const sunlifter = getSpaceController(4, 0);
+    const emptyAntimatter = resources.get("antimatter").maxValue - resources.get("antimatter").value;
+
+    if (sunlifter && sunlifter.model.on * 50 * 1.05 < emptyAntimatter) {
+      const containmentController = getSpaceController(4, 1);
+      if (containmentController) {
+        containmentController.controller.off(containmentController.model, 1);
+      }
+      return; // Exit early after adjusting containment chamber
+    }
+  }
+
+  // Combine all energy consumers into a priority list
+  const energyPriority = [
+    ...Object.values(buildings),
+    ...Object.values(spaceBuildings).filter(item => item.available),
+    voidSpace
+  ].filter(item => item.building && item.controller);
+
+  // Energy management logic
+  if (energyProduction > energyConsumption) {
+    // We have excess energy - turn on more buildings
+    const buildingsToActivate = energyPriority
+      .filter(item =>
+        item.building.val > item.building.on &&
+        (energyProduction > (energyConsumption + item.building.effects.energyConsumption * gamePage.resPool.getEnergyConsumptionRatio()) ||
+          (item.controller.model.metadata.name === "containmentChamber" && antimatterNearFull))
+      )
+      .sort((a, b) => a.priority - b.priority);
+
+    if (buildingsToActivate.length > 0) {
+      const target = buildingsToActivate[0];
+      const energyCostPerBuilding = target.building.effects.energyConsumption * gamePage.resPool.getEnergyConsumptionRatio();
+      const availableCount = Math.min(
+        Math.floor(energyDifference / energyCostPerBuilding),
+        target.building.val - target.building.on
+      );
+
+      if (availableCount > 0) {
+        target.controller.controller.on(target.controller.model, availableCount);
+      }
+    }
+  } else if (energyProduction < energyConsumption) {
+    // We have energy deficit - turn off some buildings
+    const buildingsToDeactivate = energyPriority
+      .filter(item =>
+        item.building.on > 1 &&
+        item.building.effects &&
+        item.building.effects.energyConsumption &&
+        item.building.effects.energyConsumption * gamePage.resPool.getEnergyConsumptionRatio() > 0
+      )
+      .sort((a, b) => b.priority - a.priority);
+
+    if (buildingsToDeactivate.length > 0) {
+      const target = buildingsToDeactivate[0];
+      const energyCostPerBuilding = target.building.effects.energyConsumption * gamePage.resPool.getEnergyConsumptionRatio();
+      const countToTurnOff = Math.min(
+        target.building.on - 1,
+        Math.ceil(Math.abs(energyDifference) / energyCostPerBuilding)
+      );
+
+      if (countToTurnOff > 0) {
+        target.controller.controller.off(target.controller.model, countToTurnOff);
       }
     }
   }
