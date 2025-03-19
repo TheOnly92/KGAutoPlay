@@ -2311,36 +2311,85 @@ function tryResearch(button, messagePrefix) {
 
 // Auto Workshop upgrade
 function autoWorkshop() {
-    if (gamePage.workshopTab.visible) {
-        gamePage.tabs[3].update();
-         let ignores = ["biofuel", "invisibleBlackHand"];
-         let check_str = (str, checklist) => checklist.some((s) => str.includes(s));
-         if (gamePage.ironWill && !gamePage.workshop.get("seti").researched) {
-            let IWignores = ['register', 'Hoes', 'Axe', 'Drill', 'Huts', 'geodesy', 'augumentation', 'astrophysicists', 'logistics', 'Engineers', 'internet', 'neuralNetworks', 'Robotic', 'Optimization' , 'assistance'];
-            var btn = gamePage.tabs[3].buttons.filter(res => res.model.metadata.unlocked && !res.model.metadata.researched && !check_str(res.id, ignores) && !check_str(res.id, IWignores));
-         }else{
-            var btn = gamePage.tabs[3].buttons.filter(res => res.model.metadata.unlocked && !res.model.metadata.researched && !check_str(res.id, ignores));
-         }
-         for (var wrs = 0; wrs < btn.length; wrs++) {
-            if (gamePage.ironWill && ((!gamePage.science.get('astronomy').researched && gamePage.science.get('astronomy').unlocked) || (!gamePage.science.get('theology').researched && gamePage.science.get('theology').unlocked  && gamePage.workshop.get("goldOre").researched && gamePage.workshop.get("goldOre").unlocked)))
-            {}
-            else if (gamePage.workshop.get("relicStation").unlocked && !gamePage.workshop.get("relicStation").researched && !['relicStation','voidAspiration'].includes(btn[wrs].model.metadata.name) && btn[wrs].model.prices.filter(res => res.name == 'antimatter').length > 0)
-            {}
-            else{
-                try {
-                    btn[wrs].controller.buyItem(btn[wrs].model, {}, function(result) {
-                        if (result) {
-                            btn[wrs].update();
-                            gamePage.msg('Upgraded: ' + btn[wrs].model.name );
-                            return;
-                        }
-                    });
-                } catch(err) {
-                console.log(err);
-                }
-            }
-        }
+  // Only proceed if workshop tab is visible
+  if (!gamePage.workshopTab.visible) {
+    return;
+  }
+
+  // Update the workshop tab
+  gamePage.tabs[3].update();
+
+  // Define items to ignore for all game modes
+  const ignores = ["biofuel", "invisibleBlackHand"];
+
+  // Helper function to check if a string contains any items from a list
+  const containsAny = (str, checklist) => checklist.some(item => str.includes(item));
+
+  // Filter available upgrades
+  let availableUpgrades;
+  
+  if (gamePage.ironWill && !gamePage.workshop.get("seti").researched) {
+    // Additional ignored items during Iron Will mode before SETI
+    const ironWillIgnores = [
+      'register', 'Hoes', 'Axe', 'Drill', 'Huts', 'geodesy', 
+      'augumentation', 'astrophysicists', 'logistics', 'Engineers', 
+      'internet', 'neuralNetworks', 'Robotic', 'Optimization', 'assistance'
+    ];
+    
+    availableUpgrades = gamePage.tabs[3].buttons.filter(upgrade => 
+      upgrade.model.metadata.unlocked && 
+      !upgrade.model.metadata.researched && 
+      !containsAny(upgrade.id, ignores) && 
+      !containsAny(upgrade.id, ironWillIgnores)
+    );
+  } else {
+    availableUpgrades = gamePage.tabs[3].buttons.filter(upgrade => 
+      upgrade.model.metadata.unlocked && 
+      !upgrade.model.metadata.researched && 
+      !containsAny(upgrade.id, ignores)
+    );
+  }
+
+  // Process each available upgrade
+  for (const upgrade of availableUpgrades) {
+    // Skip if we're in certain game conditions
+    if (shouldSkipUpgrade(upgrade)) {
+      continue;
     }
+
+    // Try to purchase the upgrade
+    try {
+      upgrade.controller.buyItem(upgrade.model, {}, result => {
+        if (result) {
+          upgrade.update();
+          gamePage.msg('Upgraded: ' + upgrade.model.name);
+        }
+      });
+    } catch (error) {
+      console.log('Error purchasing upgrade:', error);
+    }
+  }
+}
+
+// Helper function to determine if an upgrade should be skipped based on game conditions
+function shouldSkipUpgrade(upgrade) {
+  // Case 1: Iron Will mode with specific research conditions
+  if (gamePage.ironWill && 
+      ((!gamePage.science.get('astronomy').researched && gamePage.science.get('astronomy').unlocked) || 
+       (!gamePage.science.get('theology').researched && gamePage.science.get('theology').unlocked && 
+        gamePage.workshop.get("goldOre").researched && gamePage.workshop.get("goldOre").unlocked))) {
+    return true;
+  }
+  
+  // Case 2: Skip antimatter upgrades when relic station is available but not researched
+  if (gamePage.workshop.get("relicStation").unlocked && 
+      !gamePage.workshop.get("relicStation").researched && 
+      !['relicStation', 'voidAspiration'].includes(upgrade.model.metadata.name) && 
+      upgrade.model.prices.some(price => price.name === 'antimatter')) {
+    return true;
+  }
+  
+  return false;
 }
 
 // Festival automatically
