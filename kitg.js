@@ -3076,7 +3076,7 @@ function adjustRatiosForCrafting(resourcesAssign) {
           // ratio will be 0.1 when at 0% of required amount
           // ratio will be 0.2 when at 100% of required amount
           const progressRatio = Math.min(currentValue / requiredValue, 1);
-          const adjustedRatio = 0.05 + (progressRatio * 0.05);
+          const adjustedRatio = 0.075 + (progressRatio * 0.025);
           
           // Set the new dynamic ratio
           resourcesAssign[matchingKey].ratioNoSolar = adjustedRatio;
@@ -3647,7 +3647,7 @@ function autoRefine() {
       }
     }
   }
-  else if (bonfire.model.x100Link && (game.ironWill || gamePage.resPool.get("burnedParagon").value + gamePage.resPool.get("paragon") == 0) && wood.value < wood.maxValue * 0.1) {
+  else if (bonfire.model.x100Link && (game.ironWill || (gamePage.resPool.get("burnedParagon").value + gamePage.resPool.get("paragon") == 0 && gamePage.village.getKittens() < 20)) && wood.value < wood.maxValue * 0.1) {
     // Special case for ironWill mode
     if (bonfire.model.x100Link.visible) {
       bonfire.model.x100Link.handler(bonfire.model);
