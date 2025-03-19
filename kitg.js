@@ -526,7 +526,7 @@ function buyBuilding(building, controller, model) {
   const result = controller.buyItem(model, {});
   if (result.itemBought) {
     building.update();
-    gamePage.msg('Build: ' + building.model.name);
+    gamePage.msg('Build: ' + building.model.metadata.label);
   }
 }
 
