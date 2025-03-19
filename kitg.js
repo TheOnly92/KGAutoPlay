@@ -2692,8 +2692,8 @@ function handleTimeCrystalRefinement(religionTab, resPool) {
     // Buy single TC refinement
     religionTab.refineTCBtn.controller.buyItem(
       religionTab.refineTCBtn.model,
-      function(result.itemBought) {
-        if (result) {
+      function(result) {
+        if (result.itemBought) {
           religionTab.refineTCBtn.update();
         }
       }
