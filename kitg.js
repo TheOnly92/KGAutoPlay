@@ -3545,11 +3545,11 @@ function energyControl() {
 /**
  * Automatically gathers catnip when certain game conditions are met
  * - Less than 40 huts
- * - Low catnip reserves (less than 500)
+ * - Low catnip reserves (less than 100)
  * - Limited gathering clicks or Iron Will mode active
  */
 function autoNip() {
-  const CATNIP_THRESHOLD = 500;
+  const CATNIP_THRESHOLD = 100;
   const FIELD_THRESHOLD = 40;
   const CLICK_THRESHOLD = 2500;
   const MESSAGE_INTERVAL = 150;
@@ -3647,7 +3647,7 @@ function autoRefine() {
       }
     }
   }
-  else if (bonfire.model.x100Link && game.ironWill && wood.value < wood.maxValue * 0.1) {
+  else if (bonfire.model.x100Link && (game.ironWill || gamePage.resPool.get("burnedParagon").value + gamePage.resPool.get("paragon") == 0) && wood.value < wood.maxValue * 0.1) {
     // Special case for ironWill mode
     if (bonfire.model.x100Link.visible) {
       bonfire.model.x100Link.handler(bonfire.model);
