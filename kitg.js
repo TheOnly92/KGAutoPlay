@@ -101,7 +101,7 @@ function autoPraise() {
 // Helper function to purchase available religion upgrades
 function purchaseReligionUpgrades() {
   const availableUpgrades = gamePage.tabs[5].rUpgradeButtons.filter(
-    res => res.model.resourceIsLimited == false && 
+    res => res.model.resourceIsLimited == false &&
     !res.model.name.includes('(complete)')
   );
 
@@ -131,8 +131,8 @@ function handleSolarRevolution(faithResource, isFaithNearMax) {
   // Check if we should praise or purchase upgrades
   if (transcendenceTier > 1 && solarRevolutionRatio <= solarRevolutionLimit) {
     gamePage.religion.praise();
-  } else if (gamePage.tabs[5].rUpgradeButtons.filter(res => 
-    res.model.resourceIsLimited == false && 
+  } else if (gamePage.tabs[5].rUpgradeButtons.filter(res =>
+    res.model.resourceIsLimited == false &&
     !res.model.name.includes('(complete)')
   ).length > 0) {
     purchaseReligionUpgrades();
@@ -140,8 +140,8 @@ function handleSolarRevolution(faithResource, isFaithNearMax) {
 
   // Handle faith accumulation and transcendence
   if (isFaithNearMax) {
-    const faithThreshold = transcendenceTier < 5 ? 
-      Math.min(faithResource.maxValue * 0.99, (transcendenceTier + 1) * 10000) : 
+    const faithThreshold = transcendenceTier < 5 ?
+      Math.min(faithResource.maxValue * 0.99, (transcendenceTier + 1) * 10000) :
       faithResource.maxValue * 0.99;
 
     if (faithResource.value >= faithThreshold) {
@@ -165,8 +165,8 @@ function handleFaithReset(transcendenceTier, solarRevolutionRatio, solarRevoluti
 
   // Complex condition for faith reset
   const resetThreshold = faithMaxValue * Math.min(
-    transcendenceTier, 
-    10, 
+    transcendenceTier,
+    10,
     Math.max(transcendenceTier * 0.05, solarRevolutionLimit)
   );
 
@@ -188,7 +188,7 @@ function handleFaithReset(transcendenceTier, solarRevolutionRatio, solarRevoluti
 // Try to transcend if possible
 function tryTranscend() {
   const currentTier = gamePage.religion.transcendenceTier;
-  const needNextLevel = gamePage.religion._getTranscendTotalPrice(currentTier + 1) - 
+  const needNextLevel = gamePage.religion._getTranscendTotalPrice(currentTier + 1) -
     gamePage.religion._getTranscendTotalPrice(currentTier);
 
   if (gamePage.religion.faithRatio > needNextLevel) {
@@ -203,7 +203,7 @@ function handleBasicReligion(faithResource, isFaithNearMax) {
   )[0].model.visible == false;
 
   if (isFaithNearMax && gamePage.tabs[5].rUpgradeButtons.filter(
-    res => res.model.resourceIsLimited == false && 
+    res => res.model.resourceIsLimited == false &&
     !res.model.name.includes('(complete)')
   ).length > 0) {
     purchaseReligionUpgrades();
@@ -241,19 +241,19 @@ function purchaseCryptotheology() {
 // Handle pacts
 function handlePacts() {
   // Handle Pact of Cleansing
-  if (gamePage.science.getPolicy("siphoning").researched && 
-    gamePage.religion.getPact("pactOfCleansing").unlocked && 
+  if (gamePage.science.getPolicy("siphoning").researched &&
+    gamePage.religion.getPact("pactOfCleansing").unlocked &&
     gamePage.getEffect("pactsAvailable") > 0) {
 
-    if (gamePage.resPool.get("relic").value > 100 && 
-      gamePage.resPool.get("necrocorn").value > 10 && 
-      (gamePage.religion.getCorruptionPerTick() * (1 + gamePage.timeAccelerationRatio())) > 0.001 && 
+    if (gamePage.resPool.get("relic").value > 100 &&
+      gamePage.resPool.get("necrocorn").value > 10 &&
+      (gamePage.religion.getCorruptionPerTick() * (1 + gamePage.timeAccelerationRatio())) > 0.001 &&
       gamePage.diplomacy.get("leviathans").energy >= gamePage.diplomacy.getMarkerCap()) {
 
       const cleansing = gamePage.tabs[5].ptPanel.children[0].children.filter(
-        res => res.model.metadata && 
-        res.model.metadata.unlocked && 
-        res.id == "pactOfCleansing" && 
+        res => res.model.metadata &&
+        res.model.metadata.unlocked &&
+        res.id == "pactOfCleansing" &&
         res.model.enabled
       );
 
@@ -276,13 +276,13 @@ function handlePacts() {
   }
 
   // Handle Pay Debt
-  if (gamePage.religion.getPact("payDebt").unlocked && 
+  if (gamePage.religion.getPact("payDebt").unlocked &&
     gamePage.resPool.get("necrocorn").value > gamePage.religion.getPact("payDebt").prices[0].val) {
 
     const payDebt = gamePage.tabs[5].ptPanel.children[0].children.filter(
-      res => res.model.metadata && 
-      res.model.metadata.unlocked && 
-      res.id == "payDebt" && 
+      res => res.model.metadata &&
+      res.model.metadata.unlocked &&
+      res.id == "payDebt" &&
       res.model.enabled
     )[0];
 
@@ -323,7 +323,7 @@ function autoBuild() {
     if (Object.keys(craftPriority[0]).length > 0) {
       const isMainPriority = model.metadata.name === craftPriority[0];
       const isNotPriorityBuilding = NOT_PRIORITY_BLD_NAMES.indexOf(model.metadata.name) > -1;
-      const hasNoPriorityResources = model.prices.filter(price => 
+      const hasNoPriorityResources = model.prices.filter(price =>
         craftPriority[3].indexOf(price.name) !== -1
       ).length === 0;
 
@@ -345,7 +345,7 @@ function autoBuild() {
     if (!model.enabled) continue;
 
     // Skip forbidden resources before reset if option is enabled
-    if (switches['CollectResBReset'] && 
+    if (switches['CollectResBReset'] &&
       prices.some(res => ['relic', 'timeCrystal', 'void'].includes(res.name))) {
       continue;
     }
@@ -353,7 +353,7 @@ function autoBuild() {
     try {
       if (shouldBuildGoldenBuilding(metadata, prices, gameState)) {
         buyBuilding(building, controller, model);
-      } 
+      }
       else if (shouldBuildAICore(metadata)) {
         buyBuilding(building, controller, model);
       }
@@ -368,7 +368,7 @@ function autoBuild() {
         if (shouldBuildInIronWill(metadata, prices, gameState)) {
           buyBuilding(building, controller, model);
         }
-      } 
+      }
       else {
         // Default case - build if enabled
         buyBuilding(building, controller, model);
@@ -393,9 +393,9 @@ function shouldBuildGoldenBuilding(metadata, prices, gameState) {
   const isGoldMaxed = goldResource.value === goldResource.maxValue;
   const hasExcessGold = goldPrice && (goldPrice.val < (goldResource.value - 500));
 
-  return gameState.solarRevolution || 
-    (metadata.name === 'temple' && metadata.val < 3) || 
-    hasExcessGold || 
+  return gameState.solarRevolution ||
+    (metadata.name === 'temple' && metadata.val < 3) ||
+    hasExcessGold ||
     isGoldMaxed;
 }
 
@@ -403,7 +403,7 @@ function shouldBuildGoldenBuilding(metadata, prices, gameState) {
  * Determines if an AI Core should be built
  */
 function shouldBuildAICore(metadata) {
-  return metadata.name === "aiCore" && 
+  return metadata.name === "aiCore" &&
     metadata.val < Math.floor(spcEntangler.val * 2.5);
 }
 
@@ -414,15 +414,15 @@ function shouldSkipField(metadata) {
   if (metadata.name !== "field") return false;
 
   // Skip fields in post-apocalypse challenge when at threshold
-  if (gamePage.challenges.isActive("postApocalypse") && 
-    gamePage.bld.getPollutionLevel() >= 5 && 
+  if (gamePage.challenges.isActive("postApocalypse") &&
+    gamePage.bld.getPollutionLevel() >= 5 &&
     metadata.val >= 95 - gamePage.time.getVSU("usedCryochambers").val - gamePage.bld.getPollutionLevel()) {
     return true;
   }
 
   // Skip fields in early game when catnip is low
-  if (!gamePage.science.get('engineering').researched && 
-    gamePage.calendar.season >= 1 && 
+  if (!gamePage.science.get('engineering').researched &&
+    gamePage.calendar.season >= 1 &&
     gamePage.resPool.get('catnip').value < gamePage.resPool.get('catnip').maxValue * 0.9) {
 
     const catnipPrice = metadata.prices.find(res => res.name === "catnip");
@@ -445,27 +445,27 @@ function shouldBuildChronosphere(metadata) {
   const unobtainiumResource = gamePage.resPool.get("unobtainium");
 
   // Case 1: Need chronoforge but need to save time crystals
-  if (gamePage.workshop.get("chronoforge").researched && 
-    chronosphereVal >= 10 && 
-    ((gamePage.time.meta[0].meta[5].unlocked && 
-      timeCrystalResource.value < gamePage.timeTab.cfPanel.children[0].children[6].model.prices.find(res => res.name === "timeCrystal").val * 
-      (gamePage.timeTab.cfPanel.children[0].children[6].model.metadata.val > 3 ? 0.9 : 0.05)) || 
+  if (gamePage.workshop.get("chronoforge").researched &&
+    chronosphereVal >= 10 &&
+    ((gamePage.time.meta[0].meta[5].unlocked &&
+      timeCrystalResource.value < gamePage.timeTab.cfPanel.children[0].children[6].model.prices.find(res => res.name === "timeCrystal").val *
+      (gamePage.timeTab.cfPanel.children[0].children[6].model.metadata.val > 3 ? 0.9 : 0.05)) ||
       !gamePage.science.get("paradoxalKnowledge").researched)) {
     return true;
   }
 
   // Case 2: Under 20 chronospheres with time tab and resources
-  if (chronosphereVal < 20 && 
-    gamePage.timeTab.visible && 
-    timeCrystalResource.value - Chronosphere10SummPrices()["timeCrystal"] > 100 && 
+  if (chronosphereVal < 20 &&
+    gamePage.timeTab.visible &&
+    timeCrystalResource.value - Chronosphere10SummPrices()["timeCrystal"] > 100 &&
     gamePage.time.meta[0].meta[5].val > 0) {
     return true;
   }
 
   // Case 3: Under 10 chronospheres with enough resources
-  if (chronosphereVal < 10 && 
-    ((unobtainiumResource.value >= Chronosphere10SummPrices()["unobtainium"] && 
-      timeCrystalResource.value >= Chronosphere10SummPrices()["timeCrystal"]) || 
+  if (chronosphereVal < 10 &&
+    ((unobtainiumResource.value >= Chronosphere10SummPrices()["unobtainium"] &&
+      timeCrystalResource.value >= Chronosphere10SummPrices()["timeCrystal"]) ||
       unobtainiumResource.value >= unobtainiumResource.maxValue)) {
     return true;
   }
@@ -488,29 +488,29 @@ function shouldBuildInIronWill(metadata, prices, gameState) {
   if (metadata.name === "pasture" && !gameState.solarRevolution) return false;
 
   // Skip buildings requiring science before gold ore
-  if (!gamePage.workshop.get("goldOre").researched && 
+  if (!gamePage.workshop.get("goldOre").researched &&
     prices.some(res => res.name === 'science')) return false;
 
   // Skip mineral/slab buildings before first workshop
-  if (workshopMeta.unlocked && workshopMeta.val === 0 && 
-    metadata.name !== workshopMeta.name && 
+  if (workshopMeta.unlocked && workshopMeta.val === 0 &&
+    metadata.name !== workshopMeta.name &&
     prices.some(res => ['minerals', 'slab'].includes(res.name))) return false;
 
   // Skip mineral/slab buildings before gold ore when workshop exists
-  if (!gamePage.workshop.get("goldOre").researched && 
-    gamePage.workshop.get("goldOre").unlocked && 
-    workshopMeta.val > 0 && 
+  if (!gamePage.workshop.get("goldOre").researched &&
+    gamePage.workshop.get("goldOre").unlocked &&
+    workshopMeta.val > 0 &&
     prices.some(res => ['minerals', 'slab'].includes(res.name))) return false;
 
   // Skip mineral/slab buildings when prioritizing amphitheatre
-  if (amphitheatreMeta.unlocked && amphitheatreMeta.val <= 10 && 
-    workshopMeta.val > 0 && metadata.name !== amphitheatreMeta.name && 
+  if (amphitheatreMeta.unlocked && amphitheatreMeta.val <= 10 &&
+    workshopMeta.val > 0 && metadata.name !== amphitheatreMeta.name &&
     prices.some(res => ['minerals', 'slab'].includes(res.name))) return false;
 
   // Skip slab buildings when prioritizing temples
-  if (!gameState.solarRevolution && templeMeta.unlocked && templeMeta.val < 3 && 
-    amphitheatreMeta.val > 10 && gamePage.science.get('philosophy').researched && 
-    metadata.name !== templeMeta.name && 
+  if (!gameState.solarRevolution && templeMeta.unlocked && templeMeta.val < 3 &&
+    amphitheatreMeta.val > 10 && gamePage.science.get('philosophy').researched &&
+    metadata.name !== templeMeta.name &&
     prices.some(res => res.name === 'slab')) return false;
 
   // Skip expensive science buildings before key technologies
@@ -520,7 +520,7 @@ function shouldBuildInIronWill(metadata, prices, gameState) {
     !gamePage.science.get('theology').researched && gamePage.science.get('theology').unlocked
   ];
 
-  if (pendingTechs.some(tech => tech) && 
+  if (pendingTechs.some(tech => tech) &&
     prices.some(res => res.name === 'science' && res.val > 1000)) return false;
 
   return true;
@@ -600,30 +600,30 @@ function shouldSkipBuilding(building) {
   const prices = model.prices;
 
   // Skip buildings that require relic, time crystal, or void if CollectResBReset switch is on
-  if (switches['CollectResBReset'] && 
+  if (switches['CollectResBReset'] &&
     prices.some(res => ['relic', 'timeCrystal', 'void'].includes(res.name))) {
     return true;
   }
 
   // Skip antimatter buildings if relic station is unlocked but not researched
   // and we don't have enough antimatter during non-energy challenges
-  if (gamePage.workshop.get("relicStation").unlocked && 
-    !gamePage.workshop.get("relicStation").researched && 
-    prices.some(res => res.name === 'antimatter') && 
-    !gamePage.challenges.isActive("energy") && 
+  if (gamePage.workshop.get("relicStation").unlocked &&
+    !gamePage.workshop.get("relicStation").researched &&
+    prices.some(res => res.name === 'antimatter') &&
+    !gamePage.challenges.isActive("energy") &&
     gamePage.resPool.get("antimatter").value < gamePage.resPool.get("antimatter").maxValue) {
     return true;
   }
 
   // Skip certain space buildings before void space is researched when unobtainium is low
   const criticalBuildings = ["hydroponics", "moonBase", "sunlifter", "cryostation", "heatsink"];
-  if (!gamePage.science.get('voidSpace').researched && 
+  if (!gamePage.science.get('voidSpace').researched &&
     criticalBuildings.includes(buildingName)) {
 
     const eludiumPrice = prices.find(res => res.name === "eludium");
     const unobtainiumResource = gamePage.resPool.get("unobtainium");
 
-    if ((eludiumPrice === undefined || eludiumPrice.val > 500) && 
+    if ((eludiumPrice === undefined || eludiumPrice.val > 500) &&
       unobtainiumResource.value < unobtainiumResource.maxValue * 0.5) {
       return true;
     }
@@ -635,7 +635,7 @@ function shouldSkipBuilding(building) {
     const unobtainiumResource = gamePage.resPool.get("unobtainium");
     const eludiumResource = gamePage.resPool.get("eludium");
 
-    if (unobtainiumResource.value < unobtainiumResource.maxValue * 0.5 && 
+    if (unobtainiumResource.value < unobtainiumResource.maxValue * 0.5 &&
       unobtainiumPrice && unobtainiumPrice.val > eludiumResource.value) {
       return true;
     }
@@ -752,8 +752,8 @@ function tradeWithLeviathans() {
   const eludium = gamePage.resPool.get('eludium');
 
   // Handle time crystal trades
-  if (gamePage.time.meta[0].meta[5].val === 0 && 
-    timeCrystal.value < (gamePage.bld.getBuildingExt('chronosphere').meta.val < 10 ? 
+  if (gamePage.time.meta[0].meta[5].val === 0 &&
+    timeCrystal.value < (gamePage.bld.getBuildingExt('chronosphere').meta.val < 10 ?
       Chronosphere10SummPrices()["timeCrystal"] : 6)) {
     if (unobtainium.value > 5000) {
       gamePage.diplomacy.tradeMultiple(game.diplomacy.get("leviathans"), 1);
@@ -774,16 +774,16 @@ function tradeWithLeviathans() {
   if (checkTimeRetrieval()) {
     // Trade for time crystals if close to next resource retrieval
     gamePage.diplomacy.tradeAll(leviathans);
-  } else if (!switches['CollectResBReset'] && 
-    gamePage.space.getBuilding('sunlifter').unlocked && 
-    timeCrystal.value >= Chronosphere10SummPrices()['timeCrystal'] && 
+  } else if (!switches['CollectResBReset'] &&
+    gamePage.space.getBuilding('sunlifter').unlocked &&
+    timeCrystal.value >= Chronosphere10SummPrices()['timeCrystal'] &&
     gamePage.space.meta[5].meta[0].val < 30) {
     // Maximize sunlifter level (best effort)
     // No trade action needed
   } else if (switches['CollectResBReset'] && timeCrystal.value < 1500) {
     gamePage.diplomacy.tradeMultiple(leviathans, tradeAmount);
-  } else if (!switches['CollectResBReset'] && 
-    gamePage.bld.getBuildingExt('chronosphere').meta.val >= 10 && 
+  } else if (!switches['CollectResBReset'] &&
+    gamePage.bld.getBuildingExt('chronosphere').meta.val >= 10 &&
     timeCrystal.value <= eludium.value / 5) {
     gamePage.diplomacy.tradeMultiple(leviathans, tradeAmount);
   }
@@ -802,11 +802,11 @@ function handleFeedingElders() {
 
   if (leviathans.energy >= gamePage.diplomacy.getMarkerCap()) return;
 
-  const necrocornsNeeded = gamePage.religion.meta[0].meta[8].val > 0 
-    ? (leviathans.energy + 1) * 10 
+  const necrocornsNeeded = gamePage.religion.meta[0].meta[8].val > 0
+    ? (leviathans.energy + 1) * 10
     : Math.ceil(leviathans.energy / 10) + 1;
 
-  if (necrocorn.value > necrocornsNeeded && 
+  if (necrocorn.value > necrocornsNeeded &&
     leviathans.energy < (marker.val * 5 + 5)) {
     gamePage.diplomacy.feedElders();
   }
@@ -824,8 +824,8 @@ function tradeWithDragons() {
   const gold = gamePage.resPool.get('gold');
   const paragon = gamePage.resPool.get('paragon');
 
-  if ((titanium.value > 5000 || gamePage.bld.getBuildingExt('reactor').meta.val > 0) && 
-    uranium.value < Math.min(paragon.value, 100) && 
+  if ((titanium.value > 5000 || gamePage.bld.getBuildingExt('reactor').meta.val > 0) &&
+    uranium.value < Math.min(paragon.value, 100) &&
     gold.value < gold.maxValue * 0.95) {
     gamePage.diplomacy.tradeAll(dragons, 1);
   }
@@ -838,7 +838,7 @@ function buildEmbassies() {
   const culture = gamePage.resPool.get('culture');
 
   // Skip if not enough culture or in pacifism challenge
-  if ((culture.value < 10000 && culture.value < culture.maxValue) && 
+  if ((culture.value < 10000 && culture.value < culture.maxValue) &&
     !gamePage.challenges.isActive("pacifism")) {
     return;
   }
@@ -851,21 +851,21 @@ function buildEmbassies() {
   }
 
   // Find embassy buttons for races with unlocked trading
-  const embassyButtons = gamePage.diplomacyTab.racePanels.filter(emb => 
-    emb.race.unlocked && 
-    emb.embassyButton !== null && 
+  const embassyButtons = gamePage.diplomacyTab.racePanels.filter(emb =>
+    emb.race.unlocked &&
+    emb.embassyButton !== null &&
     !emb.embassyButton.model.resourceIsLimited
   );
 
   if (embassyButtons.length > 0) {
     // Sort by embassy level and build the lowest one
-    const lowestEmbassyRace = embassyButtons.sort((a, b) => 
+    const lowestEmbassyRace = embassyButtons.sort((a, b) =>
       a.race.embassyLevel - b.race.embassyLevel
     )[0];
 
     lowestEmbassyRace.embassyButton.controller.buyItem(
-      lowestEmbassyRace.embassyButton.model, 
-      {}, 
+      lowestEmbassyRace.embassyButton.model,
+      {},
       result => {
         if (result) {
           lowestEmbassyRace.embassyButton.update();
@@ -895,8 +895,8 @@ function handleBlackcoinSpeculation() {
   }
 
   // Buy blackcoins at low price if not saving for reset
-  if (!switches['CollectResBReset'] && 
-    relic.value > (1000 + blackcoin.value * 1000) && 
+  if (!switches['CollectResBReset'] &&
+    relic.value > (1000 + blackcoin.value * 1000) &&
     gamePage.calendar.cryptoPrice < 1000) {
     gamePage.diplomacy.buyBcoin();
   }
@@ -913,7 +913,7 @@ function shouldTradeBeActive() {
   if (gamePage.religion.getRU('solarRevolution').val === 1) return true;
 
   // Atheism or Pacifism challenge with sufficient gold or mint
-  if ((gamePage.challenges.isActive("atheism") || gamePage.challenges.isActive("pacifism")) && 
+  if ((gamePage.challenges.isActive("atheism") || gamePage.challenges.isActive("pacifism")) &&
     (gold.value > 550 || gamePage.bld.getBuildingExt('mint').meta.val > 0)) {
     return true;
   }
@@ -951,7 +951,7 @@ function isGoodTimeToTrade() {
   if (transcendence) return true;
 
   // Atheism or Pacifism challenge with sufficient gold
-  if ((gamePage.challenges.isActive("atheism") || gamePage.challenges.isActive("pacifism")) && 
+  if ((gamePage.challenges.isActive("atheism") || gamePage.challenges.isActive("pacifism")) &&
     gold.value > 500) {
     return true;
   }
@@ -987,7 +987,7 @@ function tradeWithRegularRaces() {
       const buyResource = race.buys[0];
       const resource = gamePage.resPool.get(buyResource.name);
 
-      return buyResource.val <= resource.value && 
+      return buyResource.val <= resource.value &&
         resource.value >= (resource.maxValue !== 0 ? resource.maxValue * 0.01 : 0);
     })
     .map(([name, race]) => {
@@ -1065,13 +1065,13 @@ function autoTrade() {
   if (!shouldTradeBeActive() || !isGoodTimeToTrade()) return;
 
   // Ensure diplomacy tab is rendered if necessary
-  if (gamePage.diplomacyTab.racePanels.length !== 
+  if (gamePage.diplomacyTab.racePanels.length !==
     gamePage.diplomacy.races.filter(race => race.unlocked).length) {
     gamePage.diplomacyTab.render();
   }
 
   // Handle leviathan-specific trading
-  if (gamePage.diplomacy.get('leviathans').unlocked && 
+  if (gamePage.diplomacy.get('leviathans').unlocked &&
     gamePage.diplomacy.get('leviathans').duration !== 0) {
     tradeWithLeviathans();
   }
@@ -1089,21 +1089,21 @@ function autoTrade() {
 function autoHunt() {
   const gameResources = gamePage.resPool;
   const catpower = gameResources.get('manpower');
-  
+
   // Skip hunting if pacifism challenge is active
   if (gamePage.challenges.isActive("pacifism")) {
     return;
   }
-  
+
   // Get current fur and ivory amounts
   const furs = gameResources.get('furs').value;
   const ivory = gameResources.get('ivory').value;
   const lowerResourceValue = Math.min(furs, ivory);
-  
+
   // Calculate resource-to-catpower ratio
   const resourceRatio = lowerResourceValue / catpower.maxValue;
   const catpowerRatio = catpower.value / catpower.maxValue;
-  
+
   // Hunt if catpower is high or resources are low
   if (catpowerRatio > 0.9 || resourceRatio < 0.02) {
     gamePage.village.huntAll();
@@ -1111,8 +1111,7 @@ function autoHunt() {
 }
 
 /**
- * Buildings that should be treated as very low priority.
- * If a building appears here, it effectively gets a minimal "priority factor."
+ * Buildings that should be given a very low priority factor.
  */
 const NOT_PRIORITY_BLD_NAMES = [
   "temple","tradepost","aiCore","unicornPasture","chronosphere","mint",
@@ -1121,31 +1120,30 @@ const NOT_PRIORITY_BLD_NAMES = [
 ];
 
 /**
- * Certain workshop upgrades have specific resource thresholds to aim for.
- * Each entry is:
- *   [workshopUpgradeObject, [ [resName, amountNeeded], ... ]]
+ * Workshop upgrades with special resource thresholds to gather.
+ * Each entry has the form:
+ *   [ workshopUpgradeObject, [ [resName, amountNeeded], ... ] ]
  */
 const WORKSHOP_UPGRADES_CRAFT = [
-  [ gamePage.workshop.get("printingPress"),       [ ["gear", 45*1.2] ] ],
-  [ gamePage.workshop.get("fluidizedReactors"),   [ ["alloy",200*1.2] ] ],
-  [ gamePage.workshop.get("oxidation"),           [ ["steel",5000*1.2] ] ],
-  [ gamePage.workshop.get("miningDrill"),         [ ["steel",750*1.2] ] ],
-  [ gamePage.workshop.get("steelPlants"),         [ ["gear",750*1.2] ] ],
-  [ gamePage.workshop.get("rotaryKiln"),          [ ["gear",500*1.2] ] ]
+  [ gamePage.workshop.get("printingPress"),     [ ["gear", 45 * 1.2] ] ],
+  [ gamePage.workshop.get("fluidizedReactors"), [ ["alloy", 200 * 1.2] ] ],
+  [ gamePage.workshop.get("oxidation"),         [ ["steel", 5000 * 1.2] ] ],
+  [ gamePage.workshop.get("miningDrill"),       [ ["steel", 750 * 1.2] ] ],
+  [ gamePage.workshop.get("steelPlants"),       [ ["gear", 750 * 1.2] ] ],
+  [ gamePage.workshop.get("rotaryKiln"),        [ ["gear", 500 * 1.2] ] ]
 ];
 
 /**
- * Tracks the current building priority and related data:
- *   [ buildingName, buildingPrices, buildingCurrentVal, neededResourceNames ]
+ * Current building priority data:
+ *   [ buildingName, buildingPrices, currentBldLevel, neededResourceNames ]
  */
 let craftPriority = [[], [], 0, []];
 
 /**
- * Encapsulates the main state for auto-crafting:
- *  - craftAttemptsCount: how many times we've tried to craft resources
- *                        for the current priority building
- *  - neededResources:    a map of resourceName -> amountNeeded
- *                        for the current priority building
+ * Tracks auto-crafting attempts and needed resources:
+ *  - craftAttemptsCount:  how many times we've tried crafting
+ *                         for the current building priority
+ *  - neededResources:     an object (map) of resource -> amount needed
  */
 const autoCraftState = {
   craftAttemptsCount: 0,
@@ -1153,353 +1151,442 @@ const autoCraftState = {
 };
 
 /**
- * Returns an array describing how to craft each resource.
- * Format of each entry:
- *   [
- *     resourceName,
- *     [ [ingredientName, ingredientAmount], ... ],
- *     defaultTarget,        // how many of this resource we want
- *     canCraftNowBoolean,   // whether we allow crafting this resource
- *     isActiveBoolean       // whether this resource is currently 'active'
- *   ]
- *
- * Some entries have special logic (reactor unlocked, ironWill, etc.)
- * to dynamically change targets.
+ * Returns an array of resource definitions as objects.
+ * Each object has:
+ *   - name:         resource identifier
+ *   - ingredients:  array of { name, amount } describing
+ *                   what is needed per craft
+ *   - computeTarget: function returning how many units
+ *                    the script wants to craft (dynamic)
+ *   - canCraft:     boolean or function returning whether
+ *                   crafting this resource is allowed
+ *   - isActive:     boolean or function returning whether
+ *                   the resource is "active" by default
  */
-function getResourcesAll() {
+function getResourceDefinitions() {
+  const ratio = gamePage.getCraftRatio() + 1;
+
   return [
-    [
-      "beam",
-      [ ["wood",175] ],
-      Math.min(
-        (gamePage.resPool.get("wood").value / 175) * (gamePage.getCraftRatio() + 1),
-        50000
-      ),
-      true,
-      true
-    ],
-    [
-      "slab",
-      [ ["minerals",250] ],
-      Math.min(
-        (gamePage.resPool.get("minerals").value / 250) * (gamePage.getCraftRatio() + 1),
-        50000
-      ),
-      gamePage.ironWill ? false : true,
-      true
-    ],
-    [
-      "steel",
-      [ ["iron",100], ["coal",100] ],
-      Math.min(
-        Math.max(
-          Math.min(
-            (gamePage.resPool.get("iron").value / 100) * (gamePage.getCraftRatio() + 1),
-            (gamePage.resPool.get("coal").value / 100) * (gamePage.getCraftRatio() + 1)
-          ),
-          75
-        ),
-        50000
-      ),
-      true,
-      true
-    ],
-    // The following entry chooses between two "plate" definitions
-    // depending on whether a Reactor is unlocked and if storage is limited.
-    (gamePage.bld.getBuildingExt("reactor").meta.unlocked &&
-     !gamePage.resPool.isStorageLimited(gamePage.bld.getPrices("reactor")))
-      ? [
-          "plate",
-          [ ["iron",125] ],
-          gamePage.ironWill
-            ? 15
-            : (gamePage.resPool.get("plate").value < 200
-                ? 200
-                : (gamePage.resPool.get("titanium").value > 300
-                    ? gamePage.bld.getPrices("reactor")[1].val
-                    : 200
-                  )
-              ),
-          false,
-          true
-        ]
-      : [
-          "plate",
-          [ ["iron",125] ],
-          gamePage.ironWill
-            ? 15
-            : (
-                (gamePage.resPool.get("plate").value < 150 && gamePage.science.get("navigation").researched)
-                  ? 150
-                  : Math.min(
-                      (gamePage.resPool.get("iron").value / 125) * (gamePage.getCraftRatio() + 1),
-                      50000
-                    )
-              ),
-          true,
-          true
-        ],
-    [
-      "concrate",
-      [ ["steel",25], ["slab",2500] ],
-      (gamePage.resPool.get("eludium").value > 125)
-        ? gamePage.resPool.get("steel").value
-        : 0,
-      true,
-      true
-    ],
-    [
-      "gear",
-      [ ["steel",15] ],
-      25,
-      true,
-      true
-    ],
-    [
-      "alloy",
-      [ ["steel",75], ["titanium",10] ],
-      (gamePage.resPool.get("eludium").value > 125)
-        ? gamePage.resPool.get("steel").value
-        : (
-            (gamePage.resPool.get("titanium").value < 20)
-              ? 0
-              : Math.min(
-                  Math.max(
-                    Math.min(
-                      (gamePage.resPool.get("steel").value/75)*(gamePage.getCraftRatio()+1),
-                      (gamePage.resPool.get("titanium").value/10)*(gamePage.getCraftRatio()+1)
-                    ),
-                    gamePage.workshop.get("geodesy").researched ? 50 : 0
-                  ),
-                  1000
-                )
-          ),
-      false,
-      true
-    ],
-    [
-      "eludium",
-      [ ["unobtainium",1000], ["alloy",2500] ],
-      (gamePage.resPool.get("eludium").value < 125)
-        ? 125
-        : (
-            gamePage.bld.getBuildingExt("chronosphere").meta.val < 10
-              ? 125
-              : (
-                  gamePage.resPool.get("eludium").value < 500
-                    ? 500
-                    : (
-                        (
-                          gamePage.resPool.get("unobtainium").value >
-                            gamePage.resPool.get("unobtainium").maxValue * 0.9
-                          ||
-                          gamePage.resPool.get("unobtainium").value >= Math.max(
-                            gamePage.resPool.get("eludium").value,
-                            (
-                              gamePage.resPool.get("timeCrystal").value > 1000000
-                                ? gamePage.resPool.get("unobtainium").maxValue * 0.3
-                                : (
-                                    (gamePage.resPool.get("eludium").value < 100000)
-                                      ? 200000
-                                      : gamePage.resPool.get("unobtainium").maxValue * 0.1
-                                  )
-                            )
-                          )
-                        )
-                          ? (gamePage.resPool.get("timeCrystal").value * 2 + 1)
-                          : 0
-                      )
-                )
-          ),
-      false,
-      true
-    ],
-    [ "scaffold", [ ["beam",50] ], 0, true, true ],
-    [
-      "ship",
-      [ ["scaffold",100], ["plate",150], ["starchart",25] ],
-      (!gamePage.workshop.get("geodesy").researched)
-        ? 100
-        : (
-            (gamePage.resPool.get("starchart").value > 600 || gamePage.resPool.get("ship").value > 500)
-              ? Math.min(
-                  gamePage.resPool.get("plate").value,
-                  (100 + (gamePage.resPool.get("starchart").value - 500)/25)
-                )
-              : 100
-          ),
-      true,
-      true
-    ],
-    [
-      "tanker",
-      [ ["ship",200], ["kerosene",gamePage.resPool.get("oil").maxValue * 2], ["alloy",1250], ["blueprint",5] ],
-      0,
-      true,
-      true
-    ],
-    [
-      "kerosene",
-      [ ["oil",7500] ],
-      Math.min(
-        (gamePage.resPool.get("oil").value / 7500)*(gamePage.getCraftRatio()+1),
-        50000
-      ),
-      true,
-      true
-    ],
-    [
-      "parchment",
-      [ ["furs",175] ],
-      (gamePage.resPool.get("starchart").value > 1)
-        ? (
-            (gamePage.religion.getRU("solarRevolution").val == 1)
-              ? (gamePage.resPool.get("furs").value / 3)
-              : 100
-          )
-        : 0,
-      true,
-      true
-    ],
-    [
-      "manuscript",
-      [ ["parchment",25], ["culture",400] ],
-      gamePage.ironWill
-        ? (
-            (gamePage.resPool.get("culture").value > 1600 || gamePage.diplomacy.get("nagas").unlocked)
-              ? 50
-              : 0
-          )
-        : (
-            (gamePage.religion.getRU("solarRevolution").val == 1 &&
-             gamePage.resPool.get("culture").value >= gamePage.resPool.get("culture").maxValue)
-              ? (gamePage.resPool.get("parchment").value / 3)
-              : 200
-          ),
-      true,
-      gamePage.ironWill
-        ? (gamePage.resPool.get("culture").value > 1600 || gamePage.diplomacy.get("nagas").unlocked)
-        : true
-    ],
-    [
-      "compedium",
-      [ ["manuscript",50], ["science",10000] ],
-      gamePage.ironWill
-        ? (
-            gamePage.science.get("astronomy").researched
-              ? Math.min(
-                  (gamePage.resPool.get("science").value / 10000)*(gamePage.getCraftRatio()+1),
-                  1500
-                )
-              : 0
-          )
-        : (
-            (gamePage.religion.getRU("solarRevolution").val == 1)
-              ? (gamePage.resPool.get("manuscript").value / 3)
-              : 110
-          ),
-      true,
-      (gamePage.resPool.get("manuscript").value > 200)
-    ],
-    [
-      "blueprint",
-      [ ["compedium",25], ["science",25000] ],
-      0,
-      true,
-      (gamePage.resPool.get("compedium").value > 200)
-    ],
-    [
-      "thorium",
-      [ ["uranium",250] ],
-      Math.min(
-        (gamePage.resPool.get("uranium").value / 250)*(gamePage.getCraftRatio()+1),
-        50000
-      ),
-      true,
-      true
-    ],
-    [
-      "megalith",
-      [ ["slab",50], ["beam",25], ["plate",5] ],
-      0,
-      true,
-      (gamePage.resPool.get("manuscript").value > 300)
-    ],
-    [
-      "tMythril",
-      [ ["bloodstone",5], ["ivory",1000], ["titanium",500] ],
-      5,
-      true,
-      (gamePage.ironWill && gamePage.resPool.get("tMythril").value < 5)
-    ]
+    {
+      name: "beam",
+      ingredients: [ { name: "wood", amount: 175 } ],
+      computeTarget: () => {
+        const wood = gamePage.resPool.get("wood").value;
+        return Math.min((wood / 175) * ratio, 50000);
+      },
+      canCraft: () => true,
+      isActive: () => true
+    },
+    {
+      name: "slab",
+      ingredients: [ { name: "minerals", amount: 250 } ],
+      computeTarget: () => {
+        const minerals = gamePage.resPool.get("minerals").value;
+        return Math.min((minerals / 250) * ratio, 50000);
+      },
+      canCraft: () => !gamePage.ironWill,
+      isActive: () => true
+    },
+    {
+      name: "steel",
+      ingredients: [
+        { name: "iron", amount: 100 },
+        { name: "coal", amount: 100 }
+      ],
+      computeTarget: () => {
+        const ironVal = gamePage.resPool.get("iron").value;
+        const coalVal = gamePage.resPool.get("coal").value;
+        const fromIron = (ironVal / 100) * ratio;
+        const fromCoal = (coalVal / 100) * ratio;
+        const base     = Math.min(fromIron, fromCoal);
+        const limited  = Math.max(base, 75);
+        return Math.min(limited, 50000);
+      },
+      canCraft: () => true,
+      isActive: () => true
+    },
+    {
+      name: "plate",
+      ingredients: [ { name: "iron", amount: 125 } ],
+      computeTarget: () => {
+        const ironVal   = gamePage.resPool.get("iron").value;
+        const plateVal  = gamePage.resPool.get("plate").value;
+        const titanVal  = gamePage.resPool.get("titanium").value;
+        const reacUnlocked = gamePage.bld.getBuildingExt("reactor").meta.unlocked;
+        const reacCost  = gamePage.bld.getPrices("reactor");
+        const storageLimited = gamePage.resPool.isStorageLimited(reacCost);
+
+        if (reacUnlocked && !storageLimited) {
+          if (gamePage.ironWill) {
+            return 15;
+          }
+          if (plateVal < 200) {
+            return 200;
+          }
+          if (titanVal > 300) {
+            // reacCost[1].val is typically titanium cost for reactor
+            return reacCost[1].val;
+          }
+          return 200;
+        } else {
+          if (gamePage.ironWill) {
+            return 15;
+          }
+          if (plateVal < 150 && gamePage.science.get("navigation").researched) {
+            return 150;
+          }
+          return Math.min((ironVal / 125) * ratio, 50000);
+        }
+      },
+      canCraft: () => true,
+      isActive: () => true
+    },
+    {
+      name: "concrate",
+      ingredients: [
+        { name: "steel", amount: 25 },
+        { name: "slab",  amount: 2500 }
+      ],
+      computeTarget: () => {
+        if (gamePage.resPool.get("eludium").value > 125) {
+          return gamePage.resPool.get("steel").value;
+        }
+        return 0;
+      },
+      canCraft: () => true,
+      isActive: () => true
+    },
+    {
+      name: "gear",
+      ingredients: [ { name: "steel", amount: 15 } ],
+      computeTarget: () => 25,
+      canCraft: () => true,
+      isActive: () => true
+    },
+    {
+      name: "alloy",
+      ingredients: [
+        { name: "steel",    amount: 75 },
+        { name: "titanium", amount: 10 }
+      ],
+      computeTarget: () => {
+        const steelVal = gamePage.resPool.get("steel").value;
+        const titanVal = gamePage.resPool.get("titanium").value;
+        const eludVal  = gamePage.resPool.get("eludium").value;
+        const baseSteel = (steelVal / 75) * ratio;
+        const baseTitan = (titanVal / 10) * ratio;
+
+        if (eludVal > 125) {
+          return steelVal;
+        }
+        if (titanVal < 20) {
+          return 0;
+        }
+        const geodesyBonus = gamePage.workshop.get("geodesy").researched ? 50 : 0;
+        const fromBoth = Math.min(baseSteel, baseTitan);
+        const clamp    = Math.max(fromBoth, geodesyBonus);
+        return Math.min(clamp, 1000);
+      },
+      canCraft: () => true,
+      isActive: () => true
+    },
+    {
+      name: "eludium",
+      ingredients: [
+        { name: "unobtainium", amount: 1000 },
+        { name: "alloy",       amount: 2500 }
+      ],
+      computeTarget: () => {
+        const eludVal = gamePage.resPool.get("eludium").value;
+        if (eludVal < 125) {
+          return 125;
+        }
+        if (gamePage.bld.getBuildingExt("chronosphere").meta.val < 10) {
+          return 125;
+        }
+        if (eludVal < 500) {
+          return 500;
+        }
+        const unobVal = gamePage.resPool.get("unobtainium").value;
+        const unobMax = gamePage.resPool.get("unobtainium").maxValue;
+        const tcVal   = gamePage.resPool.get("timeCrystal").value;
+        const nearFull = unobVal > unobMax * 0.9;
+        const bigCheck = unobVal >= Math.max(
+          eludVal,
+          tcVal > 1000000
+          ? unobMax * 0.3
+          : (eludVal < 100000 ? 200000 : unobMax * 0.1)
+        );
+        if (nearFull || bigCheck) {
+          return (tcVal * 2 + 1);
+        }
+        return 0;
+      },
+      canCraft: () => true,
+      isActive: () => true
+    },
+    {
+      name: "scaffold",
+      ingredients: [ { name: "beam", amount: 50 } ],
+      computeTarget: () => 0,
+      canCraft: () => true,
+      isActive: () => true
+    },
+    {
+      name: "ship",
+      ingredients: [
+        { name: "scaffold",  amount: 100 },
+        { name: "plate",     amount: 150 },
+        { name: "starchart", amount: 25 }
+      ],
+      computeTarget: () => {
+        if (!gamePage.workshop.get("geodesy").researched) {
+          return 100;
+        }
+        const starVal = gamePage.resPool.get("starchart").value;
+        const shipVal = gamePage.resPool.get("ship").value;
+        if (starVal > 600 || shipVal > 500) {
+          return Math.min(
+            gamePage.resPool.get("plate").value,
+            100 + (starVal - 500) / 25
+          );
+        }
+        return 100;
+      },
+      canCraft: () => true,
+      isActive: () => true
+    },
+    {
+      name: "tanker",
+      ingredients: [
+        { name: "ship",      amount: 200 },
+        { name: "kerosene",  amount: gamePage.resPool.get("oil").maxValue * 2 },
+        { name: "alloy",     amount: 1250 },
+        { name: "blueprint", amount: 5 }
+      ],
+      computeTarget: () => 0,
+      canCraft: () => true,
+      isActive: () => true
+    },
+    {
+      name: "kerosene",
+      ingredients: [ { name: "oil", amount: 7500 } ],
+      computeTarget: () => {
+        const oilVal = gamePage.resPool.get("oil").value;
+        return Math.min((oilVal / 7500) * ratio, 50000);
+      },
+      canCraft: () => true,
+      isActive: () => true
+    },
+    {
+      name: "parchment",
+      ingredients: [ { name: "furs", amount: 175 } ],
+      computeTarget: () => {
+        if (gamePage.resPool.get("starchart").value <= 1) {
+          return 0;
+        }
+        if (gamePage.religion.getRU("solarRevolution").val === 1) {
+          return gamePage.resPool.get("furs").value / 3;
+        }
+        return 100;
+      },
+      canCraft: () => true,
+      isActive: () => true
+    },
+    {
+      name: "manuscript",
+      ingredients: [
+        { name: "parchment", amount: 25 },
+        { name: "culture",   amount: 400 }
+      ],
+      computeTarget: () => {
+        if (gamePage.ironWill) {
+          const cultureVal = gamePage.resPool.get("culture").value;
+          const nagaUnlocked = gamePage.diplomacy.get("nagas").unlocked;
+          return (cultureVal > 1600 || nagaUnlocked) ? 50 : 0;
+        }
+        if (
+          gamePage.religion.getRU("solarRevolution").val === 1 &&
+          gamePage.resPool.get("culture").value >= gamePage.resPool.get("culture").maxValue
+        ) {
+          return gamePage.resPool.get("parchment").value / 3;
+        }
+        return 200;
+      },
+      canCraft: () => true,
+      isActive: () => {
+        if (gamePage.ironWill) {
+          return (
+            gamePage.resPool.get("culture").value > 1600 ||
+            gamePage.diplomacy.get("nagas").unlocked
+          );
+        }
+        return true;
+      }
+    },
+    {
+      name: "compedium",
+      ingredients: [
+        { name: "manuscript", amount: 50 },
+        { name: "science",    amount: 10000 }
+      ],
+      computeTarget: () => {
+        if (gamePage.ironWill) {
+          if (gamePage.science.get("astronomy").researched) {
+            return Math.min(
+              (gamePage.resPool.get("science").value / 10000) * ratio,
+              1500
+            );
+          }
+          return 0;
+        }
+        if (gamePage.religion.getRU("solarRevolution").val === 1) {
+          return gamePage.resPool.get("manuscript").value / 3;
+        }
+        return 110;
+      },
+      canCraft: () => true,
+      isActive: () => {
+        return gamePage.resPool.get("manuscript").value > 200;
+      }
+    },
+    {
+      name: "blueprint",
+      ingredients: [
+        { name: "compedium", amount: 25 },
+        { name: "science",   amount: 25000 }
+      ],
+      computeTarget: () => 0,
+      canCraft: () => true,
+      isActive: () => {
+        return gamePage.resPool.get("compedium").value > 200;
+      }
+    },
+    {
+      name: "thorium",
+      ingredients: [ { name: "uranium", amount: 250 } ],
+      computeTarget: () => {
+        const uraVal = gamePage.resPool.get("uranium").value;
+        return Math.min((uraVal / 250) * ratio, 50000);
+      },
+      canCraft: () => true,
+      isActive: () => true
+    },
+    {
+      name: "megalith",
+      ingredients: [
+        { name: "slab",  amount: 50 },
+        { name: "beam",  amount: 25 },
+        { name: "plate", amount: 5 }
+      ],
+      computeTarget: () => 0,
+      canCraft: () => true,
+      isActive: () => {
+        return gamePage.resPool.get("manuscript").value > 300;
+      }
+    },
+    {
+      name: "tMythril",
+      ingredients: [
+        { name: "bloodstone", amount: 5 },
+        { name: "ivory",      amount: 1000 },
+        { name: "titanium",   amount: 500 }
+      ],
+      computeTarget: () => 5,
+      canCraft: () => true,
+      isActive: () => {
+        return gamePage.ironWill && gamePage.resPool.get("tMythril").value < 5;
+      }
+    }
   ];
 }
 
 /**
- * Returns a numeric factor representing how strongly we want
- * to build a given building. This factor can change based on
- * challenge modes, resource levels, or other conditions.
+ * Converts the array of resource-definition objects into
+ * the array-of-arrays structure the rest of the script expects:
+ *   [
+ *     resourceName,
+ *     [ [ingName, ingAmt], ... ],
+ *     target,
+ *     canCraftBoolean,
+ *     isActiveBoolean
+ *   ]
+ */
+function getResourcesAll() {
+  const defs = getResourceDefinitions();
+  return defs.map(def => {
+    const ingArray = def.ingredients.map(ing => [ing.name, ing.amount]);
+    return [
+      def.name,
+      ingArray,
+      def.computeTarget(),
+      def.canCraft(),
+      def.isActive()
+    ];
+  });
+}
+
+/**
+ * Returns a numeric factor indicating how strongly the script
+ * prioritizes each building.
  */
 function getPriorityFactorForBuilding(bldName) {
-  // If building is in a "not priority" list, treat it with a minimal factor
+  // If it's in NOT_PRIORITY_BLD_NAMES, return a minimal factor
   if (NOT_PRIORITY_BLD_NAMES.includes(bldName)) {
     return 0.00000001;
   }
 
-  /**
-   * The logic below replicates conditional rules for each building,
-   * determining a weight that indicates how urgent it is to build.
-   */
+  // Each case returns a factor reflecting urgency.
   switch (bldName) {
     case "hut":
       return gamePage.science.get("agriculture").researched
         ? (
-            gamePage.bld.getBuildingExt("mine").meta.val > 0
-              ? 7 * (
-                  (gamePage.resPool.get("paragon").value > 200 || gamePage.village.getKittens() > 70)
-                    ? 1
-                    : (
-                        !gamePage.challenges.anyChallengeActive() &&
-                        gamePage.religion.getRU("solarRevolution").val == 1 &&
-                        gamePage.resPool.get("paragon").value < 200
-                      )
-                      ? 10
-                      : 2
-                )
-              : 5
+          gamePage.bld.getBuildingExt("mine").meta.val > 0
+          ? 7 * (
+            (gamePage.resPool.get("paragon").value > 200 || gamePage.village.getKittens() > 70)
+            ? 1
+            : (
+              !gamePage.challenges.anyChallengeActive() &&
+              gamePage.religion.getRU("solarRevolution").val === 1 &&
+              gamePage.resPool.get("paragon").value < 200
+            )
+            ? 10
+            : 2
           )
+          : 5
+        )
         : 1;
 
     case "logHouse":
       return 7 * (
         (gamePage.resPool.get("paragon").value > 200 || gamePage.village.getKittens() > 70)
-          ? 1
-          : (
-              !gamePage.challenges.anyChallengeActive() &&
-              gamePage.religion.getRU("solarRevolution").val == 1 &&
-              gamePage.resPool.get("paragon").value < 200
-            )
-            ? 10
-            : 2
+        ? 1
+        : (
+          !gamePage.challenges.anyChallengeActive() &&
+          gamePage.religion.getRU("solarRevolution").val === 1 &&
+          gamePage.resPool.get("paragon").value < 200
+        )
+        ? 10
+        : 2
       );
 
     case "mansion":
       return (
         (gamePage.resPool.get("titanium").value > 300 &&
-         (gamePage.resPool.get("steel").value > 300 || gamePage.bld.getBuildingExt("mansion").meta.val > 10))
-          ? 1.5
-          : 0.00000001
+          (gamePage.resPool.get("steel").value > 300 || gamePage.bld.getBuildingExt("mansion").meta.val > 10))
+        ? 1.5
+        : 0.00000001
       );
 
     case "steamworks":
       return (
         (gamePage.challenges.isActive("pacifism") && gamePage.bld.getBuildingExt("steamworks").meta.val < 5)
-          ? 50
-          : (
-              gamePage.bld.getBuildingExt("magneto").meta.val > 0
-                ? 2
-                : 0.00000001
-            )
+        ? 50
+        : (
+          gamePage.bld.getBuildingExt("magneto").meta.val > 0
+          ? 2
+          : 0.00000001
+        )
       );
 
     case "magneto":
@@ -1507,9 +1594,10 @@ function getPriorityFactorForBuilding(bldName) {
 
     case "factory":
       return (
-        (gamePage.resPool.get("titanium").value > 300 && gamePage.bld.getBuildingExt("magneto").meta.val > 10)
-          ? 3
-          : 0.00000001
+        (gamePage.resPool.get("titanium").value > 300 &&
+          gamePage.bld.getBuildingExt("magneto").meta.val > 10)
+        ? 3
+        : 0.00000001
       );
 
     case "reactor":
@@ -1524,63 +1612,65 @@ function getPriorityFactorForBuilding(bldName) {
     case "harbor":
       return (
         (gamePage.bld.getBuildingExt("harbor").meta.val > 100 ||
-         (gamePage.resPool.get("ship").value > 0 &&
-          gamePage.resPool.get("plate").value >
+          (gamePage.resPool.get("ship").value > 0 &&
+            gamePage.resPool.get("plate").value >
             gamePage.bld.getPrices("harbor").filter(res => res.name === "plate")[0].val
-         )
+          )
         )
-          ? 1
-          : 0.0001
+        ? 1
+        : 0.0001
       );
 
     case "smelter":
       return (
         (gamePage.bld.getBuildingExt("amphitheatre").meta.val > 0)
+        ? (
+          (gamePage.religion.getRU("solarRevolution").val === 0)
           ? (
-              (gamePage.religion.getRU("solarRevolution").val === 0)
-                ? (
-                    (gamePage.resPool.get("gold").value < 500 &&
-                     gamePage.bld.getBuildingExt("smelter").meta.on === gamePage.bld.getBuildingExt("smelter").meta.val
-                    )
-                      ? 100
-                      : 5
-                  )
-                : 5
+            (gamePage.resPool.get("gold").value < 500 &&
+              gamePage.bld.getBuildingExt("smelter").meta.on === gamePage.bld.getBuildingExt("smelter").meta.val
             )
-          : (gamePage.challenges.isActive("pacifism") ? 100 : 0.0001)
+            ? 100
+            : 5
+          )
+          : 5
+        )
+        : (gamePage.challenges.isActive("pacifism") ? 100 : 0.0001)
       );
 
     case "observatory":
       return (
         (!gamePage.challenges.isActive("blackSky") &&
-         gamePage.resPool.get("ship").value === 0 &&
-         gamePage.religion.getRU("solarRevolution").val === 1
+          gamePage.resPool.get("ship").value === 0 &&
+          gamePage.religion.getRU("solarRevolution").val === 1
         )
-          ? 100
+        ? 100
+        : (
+          (gamePage.resPool.get("ship").value === 0 &&
+            gamePage.bld.getBuildingExt("observatory").meta.val > 10 &&
+            gamePage.resPool.get("starchart").value >= 25
+          )
+          ? 0.00000001
           : (
-              (gamePage.resPool.get("ship").value === 0 &&
-               gamePage.bld.getBuildingExt("observatory").meta.val > 10 &&
-               gamePage.resPool.get("starchart").value >= 25
-              )
-                ? 0.00000001
-                : (
-                    (gamePage.religion.getRU("solarRevolution").val === 1 || gamePage.challenges.isActive("atheism"))
-                      ? 0.5
-                      : 0.0001
-                  )
-            )
+            (gamePage.religion.getRU("solarRevolution").val === 1 || gamePage.challenges.isActive("atheism"))
+            ? 0.5
+            : 0.0001
+          )
+        )
       );
 
     case "oilWell":
       return (
-        (gamePage.bld.getBuildingExt("oilWell").meta.val === 0 && gamePage.resPool.get("coal").value > 0)
-          ? 10
-          : (gamePage.resPool.get("oil").value < 500 ? 1 : 0.01)
+        (gamePage.bld.getBuildingExt("oilWell").meta.val === 0 &&
+          gamePage.resPool.get("coal").value > 0)
+        ? 10
+        : (gamePage.resPool.get("oil").value < 500 ? 1 : 0.01)
       );
 
     case "lumberMill":
       {
-        const ironPrice = gamePage.bld.getPrices("lumberMill").filter(r => r.name === "iron")[0].val;
+        const ironPrice = gamePage.bld.getPrices("lumberMill")
+        .filter(r => r.name === "iron")[0].val;
         if (ironPrice + 150 <= gamePage.resPool.get("iron").value) {
           return 1;
         } else {
@@ -1596,7 +1686,8 @@ function getPriorityFactorForBuilding(bldName) {
         const val       = gamePage.bld.getBuildingExt("calciner").meta.val;
         const oilNeeded = gamePage.bld.getPrices("calciner").filter(r => r.name === "oil")[0].val;
         if (
-          (gamePage.resPool.get("titanium").value > 0 && (val > 10 || gamePage.resPool.get("oil").value > oilNeeded)) ||
+          (gamePage.resPool.get("titanium").value > 0 &&
+            (val > 10 || gamePage.resPool.get("oil").value > oilNeeded)) ||
           gamePage.challenges.isActive("blackSky")
         ) {
           if (
@@ -1620,32 +1711,36 @@ function getPriorityFactorForBuilding(bldName) {
 
     case "amphitheatre":
       return (
-        (gamePage.bld.getBuildingExt("amphitheatre").meta.val === 0 && gamePage.resPool.get("parchment").value > 0)
-          ? 7
-          : (
-              (gamePage.bld.getBuildingExt("amphitheatre").meta.stage === 0 && gamePage.resPool.get("parchment").value > 0)
-                ? 3
-                : 0.00000001
-            )
+        (gamePage.bld.getBuildingExt("amphitheatre").meta.val === 0 &&
+          gamePage.resPool.get("parchment").value > 0)
+        ? 7
+        : (
+          (gamePage.bld.getBuildingExt("amphitheatre").meta.stage === 0 &&
+            gamePage.resPool.get("parchment").value > 0)
+          ? 3
+          : 0.00000001
+        )
       );
 
     case "ziggurat":
       {
         const zVal          = gamePage.bld.getBuildingExt("ziggurat").meta.val;
-        const blueprintCost = gamePage.bld.getPrices("ziggurat").filter(r => r.name === "blueprint")[0].val;
+        const blueprintCost = gamePage.bld.getPrices("ziggurat")
+        .filter(r => r.name === "blueprint")[0].val;
+
         if (zVal > 100) {
           return 1;
         } else if (
-          (zVal < 20 && blueprintCost <= gamePage.resPool.get("blueprint").value) &&
+          zVal < 20 &&
+          blueprintCost <= gamePage.resPool.get("blueprint").value &&
           gamePage.science.get("theology").researched &&
           gamePage.resPool.get("blueprint").value > 100
         ) {
           return 0.1;
         } else if (gamePage.resPool.get("blueprint").value > 500) {
           return 0.01;
-        } else {
-          return 0.00000001;
         }
+        return 0.00000001;
       }
 
     case "mine":
@@ -1664,58 +1759,50 @@ function getPriorityFactorForBuilding(bldName) {
 
     case "field":
       return (
-        (gamePage.challenges.isActive("postApocalypse") && gamePage.bld.getPollutionLevel() >= 5) ||
+        (gamePage.challenges.isActive("postApocalypse") &&
+          gamePage.bld.getPollutionLevel() >= 5) ||
         !gamePage.science.get("engineering").researched
       )
         ? 0
         : 0.01;
 
     default:
-      // Fallback priority factor for buildings not in the switch
       return 0.00000001;
   }
 }
 
 /**
- * Calculates the total missing resource cost for a building
- * by summing the sub-crafting requirements of each resource
- * in the building's price. This replicates the nested logic
- * originally used in the sorting comparator.
+ * Calculates how many resources are missing for a building,
+ * including nested sub-crafting costs.
  */
 function getMissingResourcesCost(prices, resourcesAll) {
   let total = 0;
-
-  for (let i=0; i<prices.length; i++) {
+  for (let i = 0; i < prices.length; i++) {
     const neededName = prices[i].name;
     const neededVal  = prices[i].val;
     const have       = gamePage.resPool.get(neededName).value;
 
     let resSum = 1;
-
     if (neededVal > have) {
       const missing = neededVal - have;
-      // Check if neededName is craftable (appears in resourcesAll)
-      for (let r=0; r<resourcesAll.length; r++) {
+      for (let r = 0; r < resourcesAll.length; r++) {
         if (neededName === resourcesAll[r][0]) {
-          // Sub-crafting analysis for each ingredient
           resSum = 1;
-          for (let s=0; s<resourcesAll[r][1].length; s++) {
+          for (let s = 0; s < resourcesAll[r][1].length; s++) {
             const subName   = resourcesAll[r][1][s][0];
             const subAmount = resourcesAll[r][1][s][1];
             let subResSum   = 1;
 
-            let differ2 = (subAmount * missing)/(gamePage.getCraftRatio()+1)
-                          - gamePage.resPool.get(subName).value;
+            let differ2 = (subAmount * missing) / (gamePage.getCraftRatio() + 1)
+              - gamePage.resPool.get(subName).value;
             if (differ2 < 0) {
               differ2 = 0;
             }
-
-            // Possible deeper sub-crafting
-            for (let t=0; t<resourcesAll.length; t++) {
+            for (let t = 0; t < resourcesAll.length; t++) {
               if (subName === resourcesAll[t][0]) {
-                for (let u=0; u<resourcesAll[t][1].length; u++) {
+                for (let u = 0; u < resourcesAll[t][1].length; u++) {
                   const deeperAmt = resourcesAll[t][1][u][1];
-                  subResSum += (deeperAmt * differ2) / (gamePage.getCraftRatio()+1);
+                  subResSum += (deeperAmt * differ2) / (gamePage.getCraftRatio() + 1);
                 }
               }
             }
@@ -1733,8 +1820,8 @@ function getMissingResourcesCost(prices, resourcesAll) {
 }
 
 /**
- * Divides the total missing sub-crafting cost by the building's
- * priority factor to produce a "score". Lower scores are better.
+ * Returns a "score" for a building by dividing its missing
+ * resource cost by the building's priority factor. Lower is better.
  */
 function computeBuildingScore(priorityFactor, bldPrices, resourcesAll) {
   const missingCost = getMissingResourcesCost(bldPrices, resourcesAll);
@@ -1742,31 +1829,24 @@ function computeBuildingScore(priorityFactor, bldPrices, resourcesAll) {
 }
 
 /**
- * Finds the best next building by sorting all unlocked, resource-unlimited
- * buildings by "missingCost / priorityFactor". Returns an object:
- *   { factor, buildingName, prices }
- * or null if no valid building is found.
+ * Finds and returns the best next building to focus on,
+ * or null if none is suitable.
  */
 function findNextPriorityBuilding(resourcesAll) {
-  const allBlds = gamePage.tabs[0].children
-    .filter(child =>
-      child.model.metadata &&
-      child.model.metadata.unlocked &&
-      !child.model.resourceIsLimited
-    );
+  const allBlds = gamePage.tabs[0].children.filter(child =>
+    child.model.metadata &&
+    child.model.metadata.unlocked &&
+    !child.model.resourceIsLimited
+  );
 
   const prior = [];
-
-  for (let i=0; i<allBlds.length; i++) {
-    const meta = allBlds[i].model.metadata;
+  for (let i = 0; i < allBlds.length; i++) {
+    const meta    = allBlds[i].model.metadata;
     const bldName = meta.name;
 
-    // Skip if ironWill + building has maxKittens
     if (gamePage.ironWill && meta.effects && meta.effects.maxKittens) {
       continue;
     }
-
-    // If the building requires blueprint but we don't have enough
     const blueprintCost = allBlds[i].model.prices.filter(r => r.name === "blueprint");
     if (blueprintCost.length && meta.val === 0) {
       if (gamePage.resPool.get("blueprint").value < blueprintCost[0].val) {
@@ -1778,7 +1858,6 @@ function findNextPriorityBuilding(resourcesAll) {
     if (factor <= 0.00000001) {
       continue;
     }
-
     prior.push([ factor, bldName, allBlds[i].model.prices ]);
   }
 
@@ -1786,7 +1865,6 @@ function findNextPriorityBuilding(resourcesAll) {
     return null;
   }
 
-  // Sort ascending by "cost / factor"
   prior.sort((a, b) => {
     const scoreA = computeBuildingScore(a[0], a[2], resourcesAll);
     const scoreB = computeBuildingScore(b[0], b[2], resourcesAll);
@@ -1801,18 +1879,16 @@ function findNextPriorityBuilding(resourcesAll) {
 }
 
 /**
- * Once a building is chosen, determines how many of each resource
- * must be gathered and stores that in autoCraftState.neededResources.
- * Also updates the global craftPriority array with the chosen building.
+ * Once a building is chosen, determines the needed resources
+ * for that building. Also updates craftPriority accordingly.
  */
 function updateCraftPriority(bld) {
-  // Clear any old entries
   autoCraftState.neededResources = {};
 
   const bldName = bld.buildingName;
   const prices  = bld.prices;
 
-  for (let i=0; i<prices.length; i++) {
+  for (let i = 0; i < prices.length; i++) {
     const needName = prices[i].name;
     const needVal  = prices[i].val;
     const have     = gamePage.resPool.get(needName).value;
@@ -1820,23 +1896,21 @@ function updateCraftPriority(bld) {
     if (needVal > have) {
       autoCraftState.neededResources[needName] = needVal;
 
-      // Check if needName itself is craftable from sub-resources
       const resourcesAll = getResourcesAll();
-      for (let r=0; r<resourcesAll.length; r++) {
+      for (let r = 0; r < resourcesAll.length; r++) {
         if (needName === resourcesAll[r][0]) {
           const subIngs = resourcesAll[r][1];
-          for (let s=0; s<subIngs.length; s++) {
+          for (let s = 0; s < subIngs.length; s++) {
             const [subName, subVal] = subIngs[s];
             const subNeeded =
               (subVal * (needVal - have) - gamePage.resPool.get(subName).value) /
               (gamePage.getCraftRatio() + 1);
 
             if (subNeeded > 0) {
-              // Take the max of existing or new
               autoCraftState.neededResources[subName] = Math.max(
                 (autoCraftState.neededResources[subName] || 0),
                 subNeeded,
-                1 // ensure we keep at least 1 if any subNeeded is positive
+                1
               );
             }
           }
@@ -1849,28 +1923,23 @@ function updateCraftPriority(bld) {
     bldName,
     prices,
     gamePage.bld.getBuildingExt(bldName).meta.val,
-    // Generate a list of resource names from the neededResources map
     Object.keys(autoCraftState.neededResources)
   ];
 }
 
 /**
- * If an upgrade is unlocked but not researched, this function makes sure
- * we gather the resources it needs by marking them as required in the
- * resourcesAll array (and in autoCraftState).
+ * Checks if certain workshop upgrades are unlocked but not researched.
+ * If so, ensures their required resources are marked as needed.
  */
 function handleWorkshopUpgrades(resourcesAll) {
-  // Only check if some ships exist
   if (gamePage.resPool.get("ship").value <= 0) {
     return;
   }
-
-  for (let i=0; i<WORKSHOP_UPGRADES_CRAFT.length; i++) {
+  for (let i = 0; i < WORKSHOP_UPGRADES_CRAFT.length; i++) {
     const upgradeObj   = WORKSHOP_UPGRADES_CRAFT[i][0];
     const neededResArr = WORKSHOP_UPGRADES_CRAFT[i][1];
 
     if (upgradeObj.researched) {
-      // Remove if it's already researched
       WORKSHOP_UPGRADES_CRAFT.splice(i,1);
       i--;
       continue;
@@ -1886,26 +1955,22 @@ function handleWorkshopUpgrades(resourcesAll) {
       if (have < reqVal) {
         missingSomething = true;
 
-        // Increase the target in resourcesAll if needed
+        // Bump resource in resourcesAll if present
         const targetRes = resourcesAll.find(r => r[0] === reqName);
         if (targetRes) {
           if (targetRes[2] < reqVal) {
             targetRes[2] = reqVal;
           }
-          // Mark resource as active but not craftable right away,
-          // forcing the script to prepare for it
           targetRes[4] = true;
           targetRes[3] = false;
         }
-
-        // Also store in autoCraftState
+        // Store in autoCraftState
         autoCraftState.neededResources[reqName] = Math.max(
           (autoCraftState.neededResources[reqName] || 0),
           reqVal
         );
       }
     }
-    // If resources are missing, focus on this upgrade first
     if (missingSomething) {
       GlobalMsg.tech = upgradeObj.label;
       break;
@@ -1914,25 +1979,23 @@ function handleWorkshopUpgrades(resourcesAll) {
 }
 
 /**
- * Crafts resources needed for the current priority building (or upgrades).
- * It marks the relevant resources in resourcesAll as active, then attempts
- * to craft them if enough raw ingredients are available.
+ * Crafts resources needed for the current building priority (and upgrades).
  */
 function performPriorityCrafts(resourcesAll) {
-  // Mark each resource in autoCraftState as needed
+  // Mark resources as active if they appear in autoCraftState.neededResources
   for (let i=0; i<resourcesAll.length; i++) {
     const entry = resourcesAll[i];
     const rName = entry[0];
 
     if (autoCraftState.neededResources[rName]) {
-      const desiredAmount = autoCraftState.neededResources[rName];
-      if (entry[2] < desiredAmount) {
-        entry[2] = desiredAmount;
+      const desired = autoCraftState.neededResources[rName];
+      if (entry[2] < desired) {
+        entry[2] = desired;
       }
-      entry[4] = true;  // Mark isActive
-      entry[3] = false; // canCraftNow = false to ensure the script tries to craft it
+      entry[4] = true;
+      entry[3] = false;
     } else {
-      // If sub-ingredients of this resource are needed, we may disable it
+      // If sub-ingredients are needed, disable certain crafts
       for (let z=0; z<entry[1].length; z++) {
         const subName = entry[1][z][0];
         if (
@@ -1946,13 +2009,13 @@ function performPriorityCrafts(resourcesAll) {
     }
   }
 
-  // Filter down to resources that are both unlocked and active
+  // Filter resources that are unlocked and active
   const craftableList = resourcesAll.filter(r => {
     const craftObj = gamePage.workshop.getCraft(r[0]);
     return (craftObj && craftObj.unlocked && r[4]);
   });
 
-  // Sort them by ascending current resource value
+  // Sort by ascending current resource value
   craftableList.sort((a,b) => {
     return (
       gamePage.resPool.get(a[0]).value -
@@ -1960,7 +2023,7 @@ function performPriorityCrafts(resourcesAll) {
     );
   });
 
-  // Attempt to craft each resource up to the target
+  // Attempt to craft each up to the target
   for (let cIdx=0; cIdx<craftableList.length; cIdx++) {
     const [resName, ingArr, targetQty] = craftableList[cIdx];
     const curVal = gamePage.resPool.get(resName).value;
@@ -1979,7 +2042,7 @@ function performPriorityCrafts(resourcesAll) {
       canCraftCount = 0;
     }
 
-    // Special-case checks for ships, kerosene, eludium, etc.
+    // Special cases for certain resources
     if (resName === "ship") {
       if (
         curVal < 100 ||
@@ -1994,7 +2057,8 @@ function performPriorityCrafts(resourcesAll) {
     else if (resName === "kerosene") {
       if (
         gamePage.resPool.get("oil").value >= gamePage.resPool.get("oil").maxValue * 0.9 ||
-        (gamePage.resPool.get("kerosene").value < 50000 && gamePage.resPool.get("oil").value > 1000000)
+        (gamePage.resPool.get("kerosene").value < 50000 &&
+          gamePage.resPool.get("oil").value > 1000000)
       ) {
         if (canCraftCount > 0) {
           gamePage.craft(resName, canCraftCount);
@@ -2015,8 +2079,8 @@ function performPriorityCrafts(resourcesAll) {
 }
 
 /**
- * Converts resources that are near their storage cap into
- * more refined goods. This prevents waste of overflow resources.
+ * Converts resources near cap into more refined goods
+ * to prevent waste.
  */
 function handleOverflowCrafting() {
   const conversions = [
@@ -2046,7 +2110,6 @@ function handleOverflowCrafting() {
       1
     );
 
-    // If there's a maxValue, check whether we are near cap
     if (rawRes.maxValue > 0) {
       if (rawRes.value > (rawRes.maxValue - resourcePerTick * 5)) {
         const toCraft = Math.floor(resourcePerCraftTrade / cost);
@@ -2055,7 +2118,6 @@ function handleOverflowCrafting() {
         }
       }
     } else {
-      // If the resource is unbounded, we simply compare to the next resource
       const craftVal = gamePage.resPool.get(craftName).value;
       if (rawRes.value > craftVal) {
         const toCraft = Math.floor(resourcePerCraftTrade / cost);
@@ -2068,20 +2130,20 @@ function handleOverflowCrafting() {
 }
 
 /**
- * Main entry point for the auto-crafting logic.
- * Clears global messages, decides whether to pick a new priority building,
- * updates or crafts resources needed for that building (and any workshop
- * upgrades), and converts capped resources.
+ * Main auto-crafting entry point.
+ * - Resets global messages
+ * - Rechecks resourcesAll for dynamic changes
+ * - Picks/updates building priority if needed
+ * - Gathers resources for workshop upgrades
+ * - Crafts resources for the priority building
+ * - Handles overflow conversions
  */
 function autoCraft2() {
-  // Reset messages each call
   GlobalMsg.tech  = "";
   GlobalMsg.craft = "";
 
-  // Prepare a fresh copy of the resource definitions
   const resourcesAll = getResourcesAll();
 
-  // Check whether we should pick a new priority building
   const currentBldName  = craftPriority[0];
   const currentBldLevel = craftPriority[2];
   let buildingLevelChanged = false;
@@ -2093,8 +2155,7 @@ function autoCraft2() {
     }
   }
 
-  // If no building is set, or we've tried too many times,
-  // or the building has advanced to a new level, pick a new priority.
+  // Decide if we need to pick a new priority
   if (
     !currentBldName || currentBldName.length === 0 ||
     autoCraftState.craftAttemptsCount === 0 ||
@@ -2108,14 +2169,13 @@ function autoCraft2() {
     }
   }
 
-  // Display which building is being targeted and how many
-  // crafting attempts remain before switching priorities again.
+  // Update user message for the current building
   if (craftPriority[0] && craftPriority[0].length > 0) {
     autoCraftState.craftAttemptsCount++;
     const bldExt = gamePage.bld.getBuildingExt(craftPriority[0]);
     if (bldExt && bldExt._metaCache) {
       GlobalMsg.craft =
-        `${bldExt._metaCache.label} (${bldExt.meta.val + 1}): ` +
+        bldExt._metaCache.label + " (" + (bldExt.meta.val + 1) + "): " +
         (201 - autoCraftState.craftAttemptsCount);
     }
     if (autoCraftState.craftAttemptsCount > 200) {
@@ -2123,15 +2183,10 @@ function autoCraft2() {
     }
   }
 
-  // If the Construction tab is available, proceed with crafting logic
+  // If the Construction tab is visible, do advanced crafting
   if (gamePage.science.get("construction").researched && gamePage.tabs[3].visible) {
-    // 1) Check for workshop upgrades
     handleWorkshopUpgrades(resourcesAll);
-
-    // 2) Perform priority crafting for the chosen building
     performPriorityCrafts(resourcesAll);
-
-    // 3) Perform overflow conversions if resources are near cap
     handleOverflowCrafting();
   }
 }
