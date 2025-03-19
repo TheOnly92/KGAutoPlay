@@ -106,12 +106,11 @@ function purchaseReligionUpgrades() {
     const upgrade = availableUpgrades[i];
     if (upgrade.model.enabled && upgrade.model.visible) {
       try {
-        upgrade.controller.buyItem(upgrade.model, function(result) {
-          if (result.itemBought) {
-            upgrade.update();
-            gamePage.msg('Religion researched: ' + upgrade.model.name);
-          }
-        });
+        const result = upgrade.controller.buyItem(upgrade.model, {});
+        if (result.itemBought) {
+          upgrade.update();
+          gamePage.msg('Religion researched: ' + upgrade.model.name);
+        }
       } catch(err) {
         console.log(err);
       }
@@ -222,12 +221,11 @@ function purchaseCryptotheology() {
     const upgrade = cryptoButtons[i];
     if (upgrade.model.enabled && upgrade.model.visible) {
       try {
-        upgrade.controller.buyItem(upgrade.model, function(result) {
-          if (result.itemBought) {
-            upgrade.update();
-            gamePage.msg('Religion Cryptotheology researched: ' + upgrade.model.name);
-          }
-        });
+        const result = upgrade.controller.buyItem(upgrade.model, {});
+        if (result.itemBought) {
+          upgrade.update();
+          gamePage.msg('Religion Cryptotheology researched: ' + upgrade.model.name);
+        }
       } catch(err) {
         console.log(err);
       }
@@ -258,12 +256,11 @@ function handlePacts() {
         const pact = cleansing[i];
         if (pact.model.enabled && pact.model.visible) {
           try {
-            pact.controller.buyItem(pact.model, function(result) {
-              if (result.itemBought) {
-                pact.update();
-                gamePage.msg('Religion Pact accepted: ' + pact.model.name);
-              }
-            });
+            const result = pact.controller.buyItem(pact.model);
+            if (result.itemBought) {
+              pact.update();
+              gamePage.msg('Religion Pact accepted: ' + pact.model.name);
+            }
           } catch(err) {
             console.log(err);
           }
@@ -284,12 +281,11 @@ function handlePacts() {
     )[0];
 
     try {
-      payDebt.controller.buyItem(payDebt.model, function(result) {
-        if (result.itemBought) {
-          payDebt.update();
-          gamePage.msg('Religion : ' + payDebt.model.name);
-        }
-      });
+      const result = payDebt.controller.buyItem(payDebt.model, {});
+      if (result.itemBought) {
+        payDebt.update();
+        gamePage.msg('Religion : ' + payDebt.model.name);
+      }
     } catch(err) {
       console.log(err);
     }
@@ -527,12 +523,11 @@ function shouldBuildInIronWill(metadata, prices, gameState) {
  * Purchases a building and logs the action
  */
 function buyBuilding(building, controller, model) {
-  controller.buyItem(model, function(result) {
-    if (result.itemBought) {
-      building.update();
-      gamePage.msg('Build: ' + building.model.name);
-    }
-  });
+  const result = controller.buyItem(model, {});
+  if (result.itemBought) {
+    building.update();
+    gamePage.msg('Build: ' + building.model.name);
+  }
 }
 
 // Build space stuff automatically
@@ -575,12 +570,11 @@ function buildSpaceBuildings() {
         }
 
         // Buy the building
-        building.controller.buyItem(building.model, function(result) {
-          if (result.itemBought) {
-            building.update();
-            gamePage.msg('Build in Space: ' + building.model.name);
-          }
-        });
+        const result = building.controller.buyItem(building.model, {});
+        if (result.itemBought) {
+          building.update();
+          gamePage.msg('Build in Space: ' + building.model.name);
+        }
       }
     } catch(err) {
       console.log(err);
@@ -662,12 +656,11 @@ function buildSpacePrograms() {
 
     if (program.model.metadata.unlocked && program.model.on === 0) {
       try {
-        program.controller.buyItem(program.model, function(result) {
-          if (result.itemBought) {
-            program.update();
-            gamePage.msg('Research Space program: ' + program.model.name);
-          }
-        });
+        const result = program.controller.buyItem(program.model, {});
+        if (result.itemBought) {
+          program.update();
+          gamePage.msg('Research Space program: ' + program.model.name);
+        }
       } catch(err) {
         console.log(err);
       }
@@ -860,14 +853,13 @@ function buildEmbassies() {
       a.race.embassyLevel - b.race.embassyLevel
     )[0];
 
-    lowestEmbassyRace.embassyButton.controller.buyItem(
+    const result = lowestEmbassyRace.embassyButton.controller.buyItem(
       lowestEmbassyRace.embassyButton.model,
-      result => {
-        if (result.itemBought) {
-          lowestEmbassyRace.embassyButton.update();
-        }
-      }
+      {}
     );
+    if (result.itemBought) {
+      lowestEmbassyRace.embassyButton.update();
+    }
   }
 }
 
@@ -2390,12 +2382,11 @@ function researchPolicies() {
  */
 function tryResearch(button, messagePrefix) {
   try {
-    button.controller.buyItem(button.model, function(result) {
-      if (result.itemBought) {
-        button.update();
-        gamePage.msg(`${messagePrefix}: ${button.model.name}`);
-      }
-    });
+    const result = button.controller.buyItem(button.model, {});
+    if (result.itemBought) {
+      button.update();
+      gamePage.msg(`${messagePrefix}: ${button.model.name}`);
+    }
   } catch (err) {
     console.log(err);
   }
@@ -2451,12 +2442,11 @@ function autoWorkshop() {
 
     // Try to purchase the upgrade
     try {
-      upgrade.controller.buyItem(upgrade.model, result => {
-        if (result.itemBought) {
-          upgrade.update();
-          gamePage.msg('Upgraded: ' + upgrade.model.name);
-        }
-      });
+      const result = upgrade.controller.buyItem(upgrade.model, {});
+      if (result.itemBought) {
+        upgrade.update();
+        gamePage.msg('Upgraded: ' + upgrade.model.name);
+      }
     } catch (error) {
       console.log('Error purchasing upgrade:', error);
     }
@@ -2690,14 +2680,13 @@ function handleTimeCrystalRefinement(religionTab, resPool) {
 
   if (earlyGameCondition) {
     // Buy single TC refinement
-    religionTab.refineTCBtn.controller.buyItem(
+    const result = religionTab.refineTCBtn.controller.buyItem(
       religionTab.refineTCBtn.model,
-      function(result) {
-        if (result.itemBought) {
-          religionTab.refineTCBtn.update();
-        }
-      }
+      {}
     );
+    if (result.itemBought) {
+      religionTab.refineTCBtn.update();
+    }
   } else if (lateGameCondition && religionTab.refineTCBtn.model.allLink.visible) {
     // Transform all TCs
     religionTab.refineTCBtn.controller.transform(
@@ -2772,12 +2761,11 @@ function handleZigguratUpgrades(religionTab, resPool) {
     }
 
     try {
-      btn.controller.buyItem(btn.model, function(result) {
-        if (result.itemBought) {
-          btn.update();
-          gamePage.msg('Build in Ziggurats: ' + btn.model.name);
-        }
-      });
+      const result = btn.controller.buyItem(btn.model, {});
+      if (result.itemBought) {
+        btn.update();
+        gamePage.msg('Build in Ziggurats: ' + btn.model.name);
+      }
     } catch(err) {
       console.log(err);
     }
@@ -2798,14 +2786,13 @@ function handleTearRefinement(religionTab, resPool) {
 
   if (religionTab.refineBtn && religionTab.refineBtn.model.visible) {
     try {
-      religionTab.refineBtn.controller.buyItem(
+      const result = religionTab.refineBtn.controller.buyItem(
         religionTab.refineBtn.model,
-        function(result) {
-          if (result.itemBought) {
-            gamePage.msg('Refine tears: BLS(' + Math.trunc(sorrowResource.value) + ')');
-          }
-        }
+        {}
       );
+      if (result.itemBought) {
+        gamePage.msg('Refine tears: BLS(' + Math.trunc(sorrowResource.value) + ')');
+      }
     } catch(err) {
       console.log(err);
     }
@@ -3587,11 +3574,10 @@ function autoNip() {
 
   try {
     // Attempt to click the gather button
-    gatherButton.controller.buyItem(gatherButton.model, (result) => {
-      if (result.itemBought && gamePage.timer.ticksTotal % MESSAGE_INTERVAL === 0) {
-        gamePage.msg('Gathering catnip');
-      }
-    });
+    const result = gatherButton.controller.buyItem(gatherButton.model, {});
+    if (result.itemBought && gamePage.timer.ticksTotal % MESSAGE_INTERVAL === 0) {
+      gamePage.msg('Gathering catnip');
+    }
   } catch (error) {
     console.error('Error while gathering catnip:', error);
   }
@@ -3639,7 +3625,7 @@ function autoRefine() {
     }
     else if (field.model.resourceIsLimited && bonfire.model.visible) {
       // Refine once
-      bonfire.controller.buyItem(bonfire.model, () => {});
+      bonfire.controller.buyItem(bonfire.model, {});
     }
     else {
       // Calculate optimal refining limit
@@ -3652,7 +3638,7 @@ function autoRefine() {
       for (let i = 0; i < refineLimit; i++) {
         if (bonfire.model.enabled) {
           try {
-            bonfire.controller.buyItem(bonfire.model, () => {});
+            bonfire.controller.buyItem(bonfire.model, {});
           } catch (err) {
             console.log(err);
             break;
@@ -4076,15 +4062,14 @@ function researchSolarRevolution() {
   // Research Solar Revolution if the button is found
   if (solarRevolutionButton) {
     try {
-      solarRevolutionButton.controller.buyItem(
+      const result = solarRevolutionButton.controller.buyItem(
         solarRevolutionButton.model,
-        result => {
-          if (result.itemBought) {
-            solarRevolutionButton.update();
-            gamePage.msg('Religion researched: ' + solarRevolutionButton.model.name);
-          }
-        }
+        {}
       );
+      if (result.itemBought) {
+        solarRevolutionButton.update();
+        gamePage.msg('Religion researched: ' + solarRevolutionButton.model.name);
+      }
     } catch (error) {
       console.error('Error researching Solar Revolution:', error);
     }
@@ -4215,11 +4200,10 @@ function buildCryochamberIfAffordable(voidBuilds, voidCf) {
   // The costCheck scales with the number of active items at index 2.
   const costCheck = Math.max(500, voidBuilds[2].model.on * 20);
   if (costCheck <= voidCf * VOID_COST_RATIO_THRESHOLD) {
-    cryoChamber.controller.buyItem(cryoChamber.model, result => {
-      if (result.itemBought) {
-        gamePage.msg(CRYOCHAMBER_FIXED_MSG);
-      }
-    });
+    const result = cryoChamber.controller.buyItem(cryoChamber.model, {});
+    if (result.itemBought) {
+      gamePage.msg(CRYOCHAMBER_FIXED_MSG);
+    }
   }
 }
 
@@ -4244,12 +4228,11 @@ function buildVoidItem1IfAffordable(voidBuilds, voidCf) {
   }
 
   // Otherwise, purchase it.
-  item1.controller.buyItem(item1.model, result => {
-    if (result.itemBought) {
-      item1.update();
-      gamePage.msg(BUILD_IN_TIME_MSG_PREFIX + item1.model.name);
-    }
-  });
+  const result = item1.controller.buyItem(item1.model, {});
+  if (result.itemBought) {
+    item1.update();
+    gamePage.msg(BUILD_IN_TIME_MSG_PREFIX + item1.model.name);
+  }
 }
 
 /**
@@ -4317,12 +4300,11 @@ function handleOtherVoidBuildings(buildingBtn, index, voidBuilds, voidCf) {
  * in the log if it was bought successfully.
  */
 function buyAndNotify(buildingBtn) {
-  buildingBtn.controller.buyItem(buildingBtn.model, result => {
-    if (result.itemBought) {
-      buildingBtn.update();
-      gamePage.msg(BUILD_IN_TIME_MSG_PREFIX + buildingBtn.model.name);
-    }
-  });
+  const result = buildingBtn.controller.buyItem(buildingBtn.model, {});
+  if (result.itemBought) {
+    buildingBtn.update();
+    gamePage.msg(BUILD_IN_TIME_MSG_PREFIX + buildingBtn.model.name);
+  }
 }
 
 /* ------------------------------------------------------------------
@@ -4691,11 +4673,10 @@ function attemptMultiYearSkips(chronoforge, tcVal, factor) {
     (heatMax - heat) > (skip1Cost * factor)
   ) {
     try {
-      shatterBtn.controller.buyItem(shatterBtn.model, function(result) {
-        if (result.itemBought) {
-          shatterBtn.update();
-        }
-      });
+      const result = shatterBtn.controller.buyItem(shatterBtn.model, {});
+      if (result.itemBought) {
+        shatterBtn.update();
+      }
     } catch (err) {
       console.log(err);
     }
@@ -4746,12 +4727,11 @@ function handleChronoforgeItemPurchase(chronoforge, t) {
   }
 
   // Otherwise, buy it and notify the user via the message log.
-  cfItem.controller.buyItem(cfItem.model, function(result) {
-    if (result.itemBought) {
-      cfItem.update();
-      gamePage.msg(BUILD_IN_TIME_MSG_PREFIX + cfItem.model.name);
-    }
-  });
+  const result = cfItem.controller.buyItem(cfItem.model, {});
+  if (result.itemBought) {
+    cfItem.update();
+    gamePage.msg(BUILD_IN_TIME_MSG_PREFIX + cfItem.model.name);
+  }
 }
 
 /**
