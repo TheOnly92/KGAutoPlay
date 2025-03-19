@@ -4898,12 +4898,15 @@ function renderNewTabs(){
   }
 }
 
-if (gamePage.ironWill){
-  if (gamePage.resPool.get("zebras").value == 0) {
-    gamePage.msg('"Iron Will" mode will be off after 755 game ticks (if not switched)');
-  }
-  else if (!switches["Iron Will"]){
-    autoSwitch('Iron Will',  'IronWill')
+if (gamePage.ironWill) {
+  if (gamePage.resPool.get("burnedParagon").value + gamePage.resPool.get("paragon").value > 0) {
+    if (gamePage.resPool.get("zebras").value == 0) {
+      gamePage.msg('"Iron Will" mode will be off after 755 game ticks (if not switched)');
+    } else if (!switches["Iron Will"]){
+      autoSwitch('Iron Will',  'IronWill')
+    }
+  } else {
+    gamePage.ironWill = false;
   }
 }
 
