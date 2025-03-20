@@ -326,6 +326,18 @@ function autoBuild() {
     return true;
   });
 
+  const earlyGameCondition = () => {
+    if (gamePage.resPool.get("burnedParagon").value + gamePage.resPool.get("paragon").value > 0) {
+      return false;
+    }
+    const kittens = gamePage.village.getKittens();
+    if (kittens > 20) {
+      return false;
+    }
+    const catnipPerTick = gamePage.calcResourcePerTick("catnip");
+    return catnipPerTick < 0.85*2;
+  };
+
   // Process each available building
   for (const building of availableBuildings) {
     const model = building.model;
@@ -357,7 +369,7 @@ function autoBuild() {
       else if (shouldBuildChronosphere(metadata)) {
         buyBuilding(building, controller, model);
       }
-      else if (gameState.ironWill || (gamePage.resPool.get("burnedParagon").value + gamePage.resPool.get("paragon").value == 0 && (gamePage.tabs[0].children.length < 3 || gamePage.tabs[0].children[2].model.metadata.val < 30))) {
+      else if (gameState.ironWill || earlyGameCondition()) {
         if (shouldBuildInIronWill(metadata, prices, gameState)) {
           buyBuilding(building, controller, model);
         }
@@ -3279,7 +3291,9 @@ function autoAssign() {
     return a.score - b.score;
   });
 
-  GlobalMsg.priorityJob = `${sortedAssignments[0].job} (${sortedAssignments[0].score}), ${sortedAssignments[1].job} (${sortedAssignments[1].score})`;
+  if (sortedAssignments.length > 1) {
+    GlobalMsg.priorityJob = `${sortedAssignments[0].job} (${sortedAssignments[0].score}), ${sortedAssignments[1].job} (${sortedAssignments[1].score})`;
+  }
 
   // 5) Assign or reassign kittens to the top priority
   autoAllocateKittens(sortedAssignments);
