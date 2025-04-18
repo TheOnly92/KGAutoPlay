@@ -219,7 +219,10 @@ function tryTranscend() {
     gamePage.religion._getTranscendTotalPrice(currentTier);
 
   if (gamePage.religion.faithRatio > needNextLevel) {
-    gamePage.religion.transend();
+    const oldConfirm = gamePage.ui.confirm;
+    gamePage.ui.confirm = (title, msg, callbackOk, callbackCancel) => callbackOk();
+    gamePage.religion.transcend();
+    gamePage.ui.confirm = oldConfirm;
   }
 }
 
