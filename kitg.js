@@ -99,7 +99,7 @@ function tryBuyItem(button, messagePrefix, events = {}) {
 // Auto Observe Astronomical Events
 function autoObserve() {
   const checkObserveBtn = document.getElementById("observeBtn");
-  if (typeof(checkObserveBtn) != 'undefined' && checkObserveBtn != null) {
+  if (typeof(checkObserveBtn) != 'undefined' && checkObserveBtn != null && checkObserveBtn.offsetParent !== null && !checkObserveBtn.disabled) {
     checkObserveBtn.click();
   }
 }
